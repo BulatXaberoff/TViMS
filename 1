@@ -1,0 +1,104 @@
+# -*- coding: utf-8 -*-
+
+###########################################################################
+## Python code generated with wxFormBuilder (version 3.10.1-0-g8feb16b3)
+## http://www.wxformbuilder.org/
+##
+## PLEASE DO *NOT* EDIT THIS FILE!
+###########################################################################
+
+import wx
+import wx.xrc
+import wx.grid
+import numpy as np
+import math
+
+
+class MyFrame1(wx.Frame):
+
+    def __init__(self, parent):
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
+                          size=wx.Size(576, 408), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
+
+        self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
+
+        self.m_staticText3 = wx.StaticText(self, wx.ID_ANY, "MyLabel", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_staticText3.Wrap(-1)
+
+        self.bSizer2.Add(self.m_staticText3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.m_textCtrl3 = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.bSizer2.Add(self.m_textCtrl3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        m_comboBox2Choices = ["Заполнить случайно"]
+        self.m_comboBox2 = wx.ComboBox(self, wx.ID_ANY, "Combo!", wx.DefaultPosition, wx.DefaultSize,
+                                       m_comboBox2Choices, 0)
+        self.m_comboBox2.Enable(False)
+        self.bSizer2.Add(self.m_comboBox2, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.m_button3 = wx.Button(self, wx.ID_ANY, u"MyButton", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.bSizer2.Add(self.m_button3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.SetSizer(self.bSizer2)
+        self.Layout()
+        self.Centre(wx.BOTH)
+
+        self.Bind(wx.EVT_TEXT_ENTER, self.onInput, self.m_textCtrl3)
+        self.Bind(wx.EVT_COMBOBOX, self.isChecked, self.m_comboBox2)
+
+    def onInput(self, event):
+        size = int(self.m_textCtrl3.Value)
+        self.m_textCtrl3.Enable(False)
+        self.m_comboBox2.Enable(True)
+        self.gr = wx.grid.Grid(self, -1)
+        self.gr.CreateGrid(size, size)
+        self.bSizer2.Add(self.gr, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.bSizer2.Layout()
+        print(size)
+
+    def isChecked(self, event):
+        size = int(self.m_textCtrl3.Value)
+        arr = np.zeros(shape=(size, size), dtype=np.int8)
+        for i in range(size):
+            self.gr.SetCellValue(i, 0, str(arr[i][0]))
+            for j in range(size):
+                self.gr.SetCellValue(j, i, str(arr[j][i]))
+
+    def toCreateMagicSquare(self):
+        n = int(self.m_textCtrl3.Value)
+        A = np.zeros([n, n])
+        for i in range(n):
+            num = math.ceil((n - 1) / 2)
+            A[i][i] = num
+            for k in range(n):
+                if k < num:
+                    if i + k + 1 < n:
+                        A[i][i + k + 1] = k
+                    else:
+                        A[i][i + k + 1 - n] = k
+                else:
+                    if k == num:
+                        pass
+                    else:
+                        if k + i < n:
+                            A[i][i + k] = k
+                        else:
+                            A[i][i + k - n] = k
+        B = np.zeros([n, n], dtype=np.int8)
+        for i in range(n):
+            for k in range(n):
+                B[i][k] = int(A[i][k] * n + A[i][n - 1 - k] + 1)
+		return B
+
+    def ismagic(a):
+        if (np.array_equal(np.unique(a.sum(axis=1)), np.unique(a.sum(axis=0))) and np.unique(
+                (a.diagonal()).sum()) in np.unique(a.sum(axis=0))):
+            return True
+        else:
+            return False
+
+
+app = wx.App()
+frame = MyFrame1(None)
+frame.Show()
+app.MainLoop()
