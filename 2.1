@@ -1,0 +1,61 @@
+import wx
+import wx.xrc
+import wx.grid
+import numpy as np
+import math
+
+
+class MyFrame1(wx.Frame):
+
+    def __init__(self, parent):
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
+                          size=wx.Size(576, 408), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
+
+        self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
+
+        self.m_staticText3 = wx.StaticText(self, wx.ID_ANY, "Введите размер для матрицы", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_staticText3.Wrap(-1)
+
+        self.bSizer2.Add(self.m_staticText3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.m_textCtrl3 = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.bSizer2.Add(self.m_textCtrl3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        m_comboBox2Choices = ["Заполнить массив без генерации","Сгенерировать магический квадрат(долго)","Проверить"]
+        self.m_comboBox2 = wx.ComboBox(self, wx.ID_ANY, "Combo!", wx.DefaultPosition, wx.DefaultSize,
+                                       m_comboBox2Choices, 0)
+        self.bSizer2.Add(self.m_comboBox2, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.SetSizer(self.bSizer2)
+        self.Layout()
+        self.Centre(wx.BOTH)
+
+        self.Bind(wx.EVT_COMBOBOX, self.isChecked, self.m_comboBox2)
+
+
+
+    def isChecked(self, event):
+        # fgs = wx.FlexGridSizer(cols=1, hgap=10, vgap=10)
+        if len(self.bSizer2.GetChildren())==4:
+            self.bSizer2.Hide(3)
+            self.bSizer2.Remove(3)
+            self.bSizer2.Layout()
+        img1=wx.Image("1.jpg")
+        w = img1.GetWidth()
+        h = img1.GetHeight()
+        sb1 = wx.StaticBitmap(self, -1, wx.BitmapFromImage(img1))
+        # fgs.Add(sb1,wx.AL)
+        self.bSizer2.Add(sb1,0,wx.ALIGN_CENTER|wx.ALL,5)
+        self.Layout()
+        print(len(self.bSizer2.GetChildren()))
+
+
+
+
+
+
+app = wx.App()
+frame = MyFrame1(None)
+frame.Show()
+app.MainLoop()
