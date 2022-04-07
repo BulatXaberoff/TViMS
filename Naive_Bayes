@@ -1,0 +1,458 @@
+import csv
+from io import StringIO
+
+import pandas as pd
+import wx
+import wx.grid as gridlib
+import seaborn as sns
+from matplotlib import pyplot as plt
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split, learning_curve
+from sklearn.naive_bayes import GaussianNB
+from scipy.stats import norm
+import numpy as np
+def normal_dist(x , mean , sd):
+    prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
+    return prob_density
+def del_arr(arr):
+  ls=[]
+  for i in range(len(arr)):
+      ls.append(arr.copy())
+  for i in range(len(arr)):
+      del ls[i][i]
+  return ls
+
+class CSVDataSource(gridlib.GridTableBase):
+    def __init__(self):
+        super().__init__()
+        self._data = None
+        self._header = None
+        self._readOnly = list()
+
+        self._roAttr = gridlib.GridCellAttr()
+        self._roAttr.SetReadOnly()
+        c = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        self._roAttr.TextColour = c
+
+    def LoadFile(self, fileName='./sample_data.csv'):
+        # fileName = 'C:\\Users\\bulyn\\PycharmProjects\\pythonProject\\B\\h.csv'
+        # df=pd.read_csv(fileName,sep=';')
+        reader = csv.reader(open(fileName, 'r'))
+        # dialect = csv.Sniffer().sniff(fileName.read(1024))
+        # reader = csv.reader(df)
+        self._data = [row for row in reader]
+        self._header = self._data.pop(0)
+        self._readOnly = list()
+
+    def GetData(self):
+        if not self._data:
+            return ""
+
+        buff = StringIO()
+        writer = csv.writer(buff)
+        writer.writerow(self._header)
+        writer.writerows(self._data)
+        print(buff.getvalue())
+        return buff.getvalue()
+
+    def SetColReadOnly(self, col):
+        self._readOnly.append(col)
+
+    def GetAttr(self, row, col, kind):
+        if col in self._readOnly:
+            self._roAttr.IncRef()
+            return self._roAttr
+        return None
+
+    def Sort(self, col, ascending):
+        self._data.sort(None, lambda data: data[col], not ascending)
+
+    def GetNumberRows(self):
+        return len(self._data) if self._data else 0
+
+    def GetNumberCols(self):
+        return len(self._header) if self._header else 0
+
+    def GetValue(self, row, col):
+        if not self._data:
+            return ""
+        else:
+            return self._data[row][col]
+
+    def SetValue(self, row, col, value):
+        if self._data:
+            self._data[row][col] = value
+
+    def GetColLabelValue(self, col):
+        return self._header[col] if self._header else None
+
+
+class CSVEditorGrid(gridlib.Grid):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self._data = CSVDataSource()
+        self.SetTable(self._data)
+
+        self.Bind(gridlib.EVT_GRID_COL_SORT, self.OnSort)
+
+    def OnSort(self, event):
+        self._data.Sort(event.Col,
+                        self.IsSortOrderAscending())
+
+    def LoadFile(self, fileName):
+        self._data.LoadFile(fileName)
+        self.SetTable(self._data)
+        self.AutoSizeColumns()
+
+    def SaveFile(self, fileName):
+        with open(fileName, 'w+') as fileObj:
+            fileObj.write(self._data.GetData())
+
+    def SetColReadOnly(self, col):
+        self._data.SetColReadOnly(col)
+
+
+# ------- Sample Application ---------#
+
+class MyFrame(wx.Frame):
+
+    def __init__(self, parent, title):
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
+                          size=wx.Size(900, 900), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
+
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+
+        m_comboBox2Choices = ["Посмотреть исходные данные", "Построить гистограммы",
+                              "Построить нормированные распределения", "Начать обучение"]
+        self.m_comboBox2 = wx.ComboBox(self, wx.ID_ANY, "", wx.DefaultPosition, wx.DefaultSize,
+                                       m_comboBox2Choices, 0)
+
+        self.sizer.Add(self.m_comboBox2, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        # self.m_comboBox3=wx.ComboBox()
+        # self.m_comboBox4=wx.ComboBox()
+        menub = wx.MenuBar()
+        fmenu = wx.Menu()
+        fmenu.Append(wx.ID_OPEN)
+        fmenu.Append(wx.ID_SAVE)
+        menub.Append(fmenu, "File")
+        self.SetMenuBar(menub)
+        self.CreateStatusBar()
+
+        self.valueCheck = ""
+        self.hearts = None
+        self._file = ''
+        self.checkedValue = 0
+
+        self.SetSizer(self.sizer)
+        self.Layout()
+        self.Centre(wx.BOTH)
+
+        self.Bind(wx.EVT_COMBOBOX, self.isChecked, self.m_comboBox2)
+        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+
+    def isChecked(self, event):
+        # fgs = wx.FlexGridSizer(cols=1, hgap=10, vgap=10)
+        print(len(self.sizer.GetChildren()))
+        if self._file == '':
+            return 0
+        if len(self.sizer.GetChildren()) == 2:
+            for count in range(1):
+                self.sizer.Hide(1)
+                self.sizer.Remove(1)
+                self.sizer.Layout()
+        if len(self.sizer.GetChildren()) == 3:
+            for count in range(2):
+                self.sizer.Hide(1)
+                self.sizer.Remove(1)
+                self.sizer.Layout()
+        if len(self.sizer.GetChildren()) == 4:
+            for count in range(3):
+                self.sizer.Hide(1)
+                self.sizer.Remove(1)
+                self.sizer.Layout()
+        if self.m_comboBox2.Value == "Посмотреть исходные данные":
+            self.checkedValue = 1
+            self._grid = CSVEditorGrid(self)
+            self._grid.LoadFile(self._file)
+            self._grid.SetColReadOnly(0)
+            self.sizer.Add(self._grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.Layout()
+
+        if self.m_comboBox2.Value == "Построить гистограммы":
+            hearts = pd.read_csv(self._file)
+            self.hearts = hearts
+            continuous_feature = [i for i in hearts.columns if hearts[i].nunique() > 10]
+            continuous_feature.append("Вывести все гистограммы")
+            self.m_comboBox3 = wx.ComboBox(self, wx.ID_FILE1, "", wx.DefaultPosition, wx.DefaultSize,
+                                           continuous_feature, 0)
+            self.sizer.Add(self.m_comboBox3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        if self.m_comboBox2.Value == "Построить нормированные распределения":
+            hearts = pd.read_csv(self._file)
+            # for name in hearts.columns:
+            #     if hearts[name].dtypes != type(int):
+            #         continue
+            #     hearts.pop(name)
+            self.hearts = hearts
+            # m_comboBox3Choices = hearts.columns
+            # m_comboBox3Choices = m_comboBox3Choices.tolist()
+            # m_comboBox3Choices.pop(len(m_comboBox3Choices) - 1)
+            # m_comboBox3Choices.append("Вывести все распределения")
+            continuous_feature = [i for i in hearts.columns if hearts[i].nunique() > 10]
+            continuous_feature.append("Вывести все распределения")
+            self.m_comboBox3 = wx.ComboBox(self, wx.ID_FILE1, "", wx.DefaultPosition, wx.DefaultSize,
+                                           continuous_feature, 0)
+            self.sizer.Add(self.m_comboBox3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        if self.m_comboBox2.Value == "Начать обучение":
+            data = pd.read_csv(self._file)
+            # continuous_feature = [i for i in hearts.columns if hearts[i].nunique() > 10]
+            # train, test = train_test_split(data, test_size=0.3)
+            self.Train(data)
+            # self.My_train(data)
+        self.Layout()
+        self.Bind(wx.EVT_COMBOBOX, self.isChecked1, self.m_comboBox3)
+        # self.Bind(wx.EVT_COMBOBOX, self.isChecked2, self.m_comboBox4)
+
+    def My_train(self, data):
+        goal = data.columns[-1]
+        # feature = data.columns[len(data.columns) - 1]
+        # print(type(feature))
+        data = pd.get_dummies(data)
+        X, y = data.drop(goal, axis=1), data[goal]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=30)
+        # gaussian = GaussianNB()
+        # gaussian.fit(X_train, y_train)
+        means = X_train.groupby(y_train).apply(np.mean)
+        stds = X_train.groupby(y_train).apply(np.std)
+        probs = X_train.groupby(y_train).apply(lambda x: len(x)) / X_train.shape[0]
+        y_pred = self.fit(X_test, means, probs, stds, y_test, y_train)
+        accuracy = accuracy_score(y_test, y_pred)
+        # accuracy_nb = round(accuracy_score(y_test, Y_pred) * 100, 2)
+        # acc_gaussian = round(gaussian.score(X_train, y_train) * 100, 2)
+        # accuracy = accuracy_score(y_test, Y_pred)
+        # print('accuracy_Naive Bayes: %.3f' % accuracy)
+        self.Build_plot(X, accuracy, y)
+
+    def Build_plot(self, X, accuracy, y):
+        gaussian = GaussianNB()
+        train_sizes, train_scores, test_scores = learning_curve(gaussian, X, y)
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        plt.fill_between(train_sizes,
+                         test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std,
+                         alpha=0.1,
+                         color="g", )
+        plt.plot(train_sizes, train_scores_mean, "o-", color="r", label="Training score"
+                 )
+        plt.plot(
+            train_sizes, test_scores_mean, "o-", color="g", label="Cross-validation score"
+        )
+        plt.legend(loc="best")
+        plt.title('accuracy_Naive Bayes: %.3f' % accuracy)
+        # plt.text(1,0, 1, "1")
+        plt.show()
+
+    def fit(self,X_test, means, probs, stds, y_test, y_train):
+        y_pred = []
+        r = []
+        # каждый элемент в валидационной части данных
+        for elem in range(X_test.shape[0]):
+            p = {}
+
+            # для каждого возможного класса
+            for cl in np.unique(y_train):
+
+                # априорная вероятность взятого ранее класса
+                p[cl] = probs.iloc[cl]
+
+                # для каждого столбца в датасете
+                for index, param in enumerate(X_test.iloc[elem]):
+                    # умножаем вероятность того, что данное значение столбца
+                    # будет принадлежать распределению для выбранного класса
+                    p[cl] *= norm.pdf(param, means.iloc[cl, index], stds.iloc[cl, index])
+                #  r[elem]=p[cl]
+                #  print(str(cl) + "\t" +  str(p[cl]))
+            y_pred.append(pd.Series(p).values.argmax())
+        return y_pred
+
+    def Train(self, data):
+        feature = data.columns[len(data.columns) - 1]
+        print(type(feature))
+        data = pd.get_dummies(data)
+        X = data.iloc[:, :-1].values
+        y = data.iloc[:, -1].values
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+        gaussian = GaussianNB()
+        gaussian.fit(X_train, y_train)
+        Y_pred = gaussian.predict(X_test)
+        # accuracy_nb = round(accuracy_score(y_test, Y_pred) * 100, 2)
+        # acc_gaussian = round(gaussian.score(X_train, y_train) * 100, 2)
+        accuracy = accuracy_score(y_test, Y_pred)
+        train_sizes, train_scores, test_scores = learning_curve(gaussian, X, y)
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        plt.fill_between(train_sizes,
+                         test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std,
+                         alpha=0.1,
+                         color="g", )
+        plt.plot(train_sizes, train_scores_mean, "o-", color="r", label="Training score"
+                 )
+        plt.plot(
+            train_sizes, test_scores_mean, "o-", color="g", label="Test score"
+        )
+        plt.legend(loc="best")
+        plt.title('accuracy: %.3f' % accuracy)
+        # plt.text(1,0, 1, "1")
+        plt.show()
+
+    def isChecked1(self, event):
+        if self.m_comboBox2.Value == "Построить гистограммы":
+            data = pd.read_csv(self._file)
+            continuous_feature = [i for i in data.columns if data[i].nunique() > 10]
+            featur = data.columns[len(data.columns) - 1]
+            if len(self.sizer.GetChildren()) == 3:
+                for count in range(1):
+                    self.sizer.Hide(2)
+                    self.sizer.Remove(2)
+                    self.sizer.Layout()
+            if self.m_comboBox3.Value == "Вывести все гистограммы":
+                plt.style.use('fivethirtyeight')
+                i = 1
+                plt.figure(figsize=(18, 16))
+                for feature in continuous_feature:
+                    plt.subplot(3, 2, i)
+                    sns.histplot(x=data[feature], fill=True, kde=True, hue=data[featur])
+                    # sns.displot(x=data[feature], hue=data[featur],
+                    #     kind="kde", fill=True, data=self.hearts)
+                    plt.xlabel(feature, size=10)
+                    i += 1
+
+                plt.show()
+                return 0
+            sns.displot(x=self.m_comboBox3.Value, hue=self.hearts.columns[-1],
+                        kind="kde", fill=True, data=self.hearts)
+            # отмечаем каждую точку наблюдений:
+            # sns.rugplot(x=self.m_comboBox3.Value,
+            #             data=self.hearts);
+            #
+            # # и, наконец, плотность ядра:
+            # sns.kdeplot(x=self.m_comboBox3.Value,
+            #             data=self.hearts);
+            plt.show()
+            # plt.savefig('output.jpg')
+            # image = wx.Image('output.jpg', wx.BITMAP_TYPE_JPEG)
+            # temp = image.ConvertToBitmap()
+            # size = temp.GetWidth(), temp.GetHeight()
+            # self.bmp = wx.StaticBitmap(self, bitmap=temp)
+            # self.sizer.Add(self.bmp,0, wx.ALIGN_CENTER | wx.ALL, 5)
+            # self.Layout()
+
+        if self.m_comboBox2.Value == "Построить нормированные распределения":
+            hearts = pd.read_csv(self._file)
+            goal = hearts.columns[len(hearts.columns) - 1]
+            discrette_feature = [i for i in hearts.columns if hearts[i].nunique() < 10]
+            continuous_feature = [i for i in hearts.columns if hearts[i].nunique() > 10]
+            x_true, x_false = hearts.drop(columns=discrette_feature, axis=1), hearts.drop(columns=discrette_feature,
+                                                                                          axis=1)
+            x_true, x_false = x_true.loc[hearts[goal] == 1], x_false.loc[hearts[goal] == 0]
+            a = del_arr(list(x_true.columns))
+            if len(self.sizer.GetChildren()) == 3:
+                for count in range(1):
+                    self.sizer.Hide(2)
+                    self.sizer.Remove(2)
+                    self.sizer.Layout()
+            if self.m_comboBox3.Value == "Вывести все распределения":
+
+                plt.style.use('fivethirtyeight')
+                plt.figure(figsize=(18, 16))
+                for el in range(len(x_true.columns)):
+                    x_true_c, x_false_c = x_true.drop(columns=a[el], axis=1), x_false.drop(columns=a[el], axis=1)
+                    t_mean = np.mean(x_true_c)
+                    f_mean = np.mean(x_false_c)
+
+                    t_sd = np.std(x_true_c)
+                    f_sd = np.std(x_false_c)
+
+                    x_true_c, x_false_c = x_true_c.sort_values(by=[continuous_feature[el]],
+                                                               ascending=True), x_false_c.sort_values(
+                        by=[continuous_feature[el]], ascending=True)
+                    pdf_t = normal_dist(x_true_c, t_mean, t_sd)
+                    pdf_f = normal_dist(x_false_c, f_mean, f_sd)
+
+                    plt.subplot(3, 2, el + 1)
+                    plt.plot(x_true_c, pdf_t, label="1")
+                    plt.plot(x_false_c, pdf_f, label="0")
+                    plt.ylabel('Probability Density')
+                    plt.xlabel(x_true.columns[el])
+                    plt.legend()
+                plt.show()
+                return 0
+            x_true_c, x_false_c = x_true.drop(columns=a[continuous_feature.index(self.m_comboBox3.Value)], axis=1),\
+                                  x_false.drop(columns=a[continuous_feature.index(self.m_comboBox3.Value)], axis=1)
+            t_mean = np.mean(x_true_c)
+            f_mean = np.mean(x_false_c)
+
+            t_sd = np.std(x_true_c)
+            f_sd = np.std(x_false_c)
+
+            x_true_c, x_false_c = x_true_c.sort_values(by=self.m_comboBox3.Value,
+                                                       ascending=True), x_false_c.sort_values(
+                by=self.m_comboBox3.Value, ascending=True)
+            pdf_t = normal_dist(x_true_c, t_mean, t_sd)
+            pdf_f = normal_dist(x_false_c, f_mean, f_sd)
+
+            plt.plot(x_true_c, pdf_t,label="1")
+            plt.plot( x_false_c, pdf_f,label="0")
+            plt.ylabel('Probability Density')
+            plt.xlabel(self.m_comboBox3.Value)
+            plt.legend()
+            plt.show()
+    # def isChecked2(self,event):
+    #     data = pd.read_csv(self._file)
+    #     continuous_feature = [i for i in data.columns if data[i].nunique() > 10]
+    #     goal = data.columns[len(data.columns) - 1]
+    #     x_true, x_false = data.loc[data[goal] == 1], data.loc[data[goal] == 0]
+    #     x_true, x_false = x_true[continuous_feature[0]], x_false[continuous_feature[0]]
+    #     print("Hello")
+    def OnOpen(self, event):
+        if len(self.sizer.GetChildren()) == 2:
+            for count in range(1):
+                self.sizer.Hide(1)
+                self.sizer.Remove(1)
+                self.sizer.Layout()
+        dlg = wx.FileDialog(self, "Open CSV File", wildcard="*.csv")
+        result = dlg.ShowModal()
+        if result == wx.ID_OK:
+            self._grid = CSVEditorGrid(self)
+            self._grid.LoadFile(dlg.Path)
+            self._file = dlg.Path
+            self.sizer.Add(self._grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+            self.Layout()
+        dlg.Destroy()
+
+    def OnSave(self, event):
+        self._grid.SaveFile(self._file)
+        self.SetStatusText("Saved file: %s" % self._file)
+
+
+class MyApp(wx.App):
+    def OnInit(self):
+        self.frame = MyFrame(None, title="Data Grid")
+        self.frame.Show()
+        return True
+
+
+app = wx.App()
+frame = MyFrame(None, title="Data Grid")
+frame.Show()
+app.MainLoop()
