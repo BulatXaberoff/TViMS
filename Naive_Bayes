@@ -125,7 +125,7 @@ class MyFrame(wx.Frame):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
         m_comboBox2Choices = ["Посмотреть исходные данные", "Построить гистограммы",
-                              "Построить нормированные распределения", "Начать обучение"]
+                              "Построить нормальные распределения", "Начать обучение"]
         self.m_comboBox2 = wx.ComboBox(self, wx.ID_ANY, "", wx.DefaultPosition, wx.DefaultSize,
                                        m_comboBox2Choices, 0)
 
@@ -190,7 +190,7 @@ class MyFrame(wx.Frame):
                                            continuous_feature, 0)
             self.sizer.Add(self.m_comboBox3, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
-        if self.m_comboBox2.Value == "Построить нормированные распределения":
+        if self.m_comboBox2.Value == "Построить нормальные распределения":
             hearts = pd.read_csv(self._file)
             # for name in hearts.columns:
             #     if hearts[name].dtypes != type(int):
@@ -331,7 +331,8 @@ class MyFrame(wx.Frame):
                 plt.figure(figsize=(18, 16))
                 for feature in continuous_feature:
                     plt.subplot(3, 2, i)
-                    sns.histplot(x=data[feature], fill=True, kde=True, hue=data[featur])
+                    sns.histplot(x=data[feature], fill=True, hue=data[featur])
+                    # sns.displot(x=data[feature], hue=self.hearts.columns[-1], data=self.hearts)
                     # sns.displot(x=data[feature], hue=data[featur],
                     #     kind="kde", fill=True, data=self.hearts)
                     plt.xlabel(feature, size=10)
@@ -339,8 +340,7 @@ class MyFrame(wx.Frame):
 
                 plt.show()
                 return 0
-            sns.displot(x=self.m_comboBox3.Value, hue=self.hearts.columns[-1],
-                        kind="kde", fill=True, data=self.hearts)
+            sns.displot(x=self.m_comboBox3.Value, hue=self.hearts.columns[-1],data=self.hearts)
             # отмечаем каждую точку наблюдений:
             # sns.rugplot(x=self.m_comboBox3.Value,
             #             data=self.hearts);
@@ -357,7 +357,12 @@ class MyFrame(wx.Frame):
             # self.sizer.Add(self.bmp,0, wx.ALIGN_CENTER | wx.ALL, 5)
             # self.Layout()
 
-        if self.m_comboBox2.Value == "Построить нормированные распределения":
+        if self.m_comboBox2.Value == "Построить нормальные распределения":
+            if len(self.sizer.GetChildren()) == 3:
+                for count in range(1):
+                    self.sizer.Hide(2)
+                    self.sizer.Remove(2)
+                    self.sizer.Layout()
             hearts = pd.read_csv(self._file)
             goal = hearts.columns[len(hearts.columns) - 1]
             discrette_feature = [i for i in hearts.columns if hearts[i].nunique() < 10]
@@ -366,11 +371,7 @@ class MyFrame(wx.Frame):
                                                                                           axis=1)
             x_true, x_false = x_true.loc[hearts[goal] == 1], x_false.loc[hearts[goal] == 0]
             a = del_arr(list(x_true.columns))
-            if len(self.sizer.GetChildren()) == 3:
-                for count in range(1):
-                    self.sizer.Hide(2)
-                    self.sizer.Remove(2)
-                    self.sizer.Layout()
+
             if self.m_comboBox3.Value == "Вывести все распределения":
 
                 plt.style.use('fivethirtyeight')
