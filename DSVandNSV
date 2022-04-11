@@ -1,0 +1,117 @@
+import wx
+import wx.grid
+import wx.xrc
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+import sympy
+#
+# x = sympy.symbols('x')
+# y = 1 + sympy.sin(sympy.sqrt(x**2 + 20))
+# lat = sympy.latex(y)
+#
+# #add text
+# plt.text(0, 0.6, r"$%s$" % lat, fontsize = 10)
+#
+# #hide axes
+# fig = plt.gca()
+# fig.axes.get_xaxis().set_visible(False)
+# fig.axes.get_yaxis().set_visible(False)
+# plt.draw() #or savefig
+# plt.show()
+class MyFrame(wx.Frame):
+
+    def __init__(self, parent):
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
+                          size=wx.Size(900, 900), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+        self.panel = wx.Panel(self)
+        self.gr = wx.GridBagSizer(8, 8)
+
+        text=wx.StaticText(self.panel,label="Введите кол-во переменных")
+        self.gr.Add(text, pos=(0, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+
+        txctrl=wx.TextCtrl(self.panel,style=wx.TE_PROCESS_ENTER)
+        self.gr.Add(txctrl, pos=(1, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+
+        self.grid = wx.grid.Grid(self.panel)
+        self.grid.CreateGrid(1, 10)
+        self.grid.Hide()
+        self.gr.Add(self.grid, pos=(2, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+
+        # self.Centre(wx.BOTH)
+        self.Bind(wx.EVT_TEXT_ENTER, self.onParam,txctrl)
+        self.panel.SetSizer(self.gr)
+
+    def onParam(self,event):
+        num=int(event.GetString())
+        print(len(self.gr.GetChildren()))
+        if len(self.gr.GetChildren()) == 5:
+            self.gr.Remove(4)
+            self.Layout()
+        if len(self.gr.GetChildren())==4:
+            self.gr.Remove(3)
+            self.Layout()
+
+
+        self.grid.Destroy()
+        self.grid = wx.grid.Grid(self.panel)
+        self.grid.CreateGrid(2, num)
+        self.grid.SetRowLabelValue(0,"x_i")
+        self.grid.SetRowLabelValue(1,"p_i")
+        for i in range(num):
+            self.grid.SetColLabelValue(i, f"{i+1}")
+        self.gr.Add(self.grid, pos=(2, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+
+        but1=wx.Button(self.panel)
+        but1.Label="Заполнить величины"
+        self.gr.Add(but1, pos=(3, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+
+        but2=wx.Button(self.panel)
+        but2.Label="Вычислить"
+        self.gr.Add(but2, pos=(4, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+
+        self.panel.SetSizer(self.gr)
+        self.panel.Layout()
+        self.Bind(wx.EVT_BUTTON,self.onBut1,but1)
+        self.Bind(wx.EVT_BUTTON,self.onBut2,but2)
+
+    def onBut1(self,event):
+        size=self.grid.GetNumberCols()
+        arr_x = random.sample(range(10+size), size)
+        arr_x.sort()
+        for i in range(size):
+            self.grid.SetCellValue(0, i, str(arr_x[i]))
+        for i in range(size):
+            self.grid.SetCellValue(1, i, str(0))
+        self.arr_x=np.array(arr_x)
+    def onBut2(self,event):
+        arr_p=list()
+        s=""
+        for i in range(self.grid.GetNumberCols()):
+            arr_p.append(float(self.grid.GetCellValue(1, i)))
+        arr_p=np.array(arr_p)
+        if arr_p.sum() != 1:
+            print("Неверно")
+            return
+        M_X=np.dot(self.arr_x,arr_p)
+        D_X=np.var(self.arr_x)
+        Std=np.std(self.arr_x)
+        stattxt=wx.StaticText(self.panel)
+        stattxt.LabelText=f"{M_X}-мат.ожидание\n{D_X}-дисперсия\n{Std}-стандартное отклонение"
+        plt.plot(self.arr_x,arr_p)
+        plt.show()
+        # stattxt.LabelText=sympy.sqrt(12)
+
+        self.gr.Add(stattxt, pos=(5, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+    def __del__(self):
+        pass
+
+
+app = wx.App()
+
+wnd = MyFrame(None)
+wnd.Show()
+app.MainLoop()
+# x = sympy.symbols('x')
+# expr = sympy.sin(sympy.sqrt(x**2 + 20)) + 1
+# sympy.preview(expr, viewer='file', filename='output.png')
