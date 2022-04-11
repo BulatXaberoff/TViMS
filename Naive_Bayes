@@ -11,16 +11,21 @@ from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.naive_bayes import GaussianNB
 from scipy.stats import norm
 import numpy as np
-def normal_dist(x , mean , sd):
-    prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
+
+
+def normal_dist(x, mean, sd):
+    prob_density = (np.pi * sd) * np.exp(-0.5 * ((x - mean) / sd) ** 2)
     return prob_density
+
+
 def del_arr(arr):
-  ls=[]
-  for i in range(len(arr)):
-      ls.append(arr.copy())
-  for i in range(len(arr)):
-      del ls[i][i]
-  return ls
+    ls = []
+    for i in range(len(arr)):
+        ls.append(arr.copy())
+    for i in range(len(arr)):
+        del ls[i][i]
+    return ls
+
 
 class CSVDataSource(gridlib.GridTableBase):
     def __init__(self):
@@ -113,9 +118,37 @@ class CSVEditorGrid(gridlib.Grid):
         self._data.SetColReadOnly(col)
 
 
+class OtherFrame(wx.Frame):
+    """
+    Class used for creating frames other than the main one
+    """
+
+    def __init__(self, title, parent=None):
+        wx.Frame.__init__(self, parent=parent, title=title)
+        h = MyFrame(None, title="Data Grid").f[0]
+        hearts = pd.read_csv(h)
+        goal = hearts.columns[-1]
+        continuous_feature = [i for i in hearts.columns if hearts[i].nunique() < 10]
+        continuous_feature.remove(goal)
+        hearts = hearts.drop(continuous_feature, axis=1)
+
+        col = hearts.shape[1]
+        row = hearts.shape[0]
+        self.grid = wx.grid.Grid(self, -1)
+        self.grid.CreateGrid(row, col)
+        for i in range(col):
+            # self.grid.SetCellValue(0, i, str(int(hearts.iloc[0][i])))
+            for j in range(row):
+                self.grid.SetCellValue(j, i, str(int(hearts.iloc[j][i])))
+        for i in range(col):
+            self.grid.SetColLabelValue(i, hearts.columns[i])
+        self.Show()
+
+
 # ------- Sample Application ---------#
 
 class MyFrame(wx.Frame):
+    _file = ''
 
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
@@ -124,14 +157,19 @@ class MyFrame(wx.Frame):
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
-        m_comboBox2Choices = ["Посмотреть исходные данные", "Построить гистограммы",
-                              "Построить нормальные распределения", "Начать обучение"]
+        m_comboBox2Choices = ["Посмотреть исходные данные", "Посмотреть урезанные данные для обучения",
+                              "Построить гистограммы",
+                              "Построить нормальные распределения", "Начать обучение", "Обучение с урезанными данными"
+            , "Ввод данных"]
         self.m_comboBox2 = wx.ComboBox(self, wx.ID_ANY, "", wx.DefaultPosition, wx.DefaultSize,
                                        m_comboBox2Choices, 0)
 
         self.sizer.Add(self.m_comboBox2, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.frame_number = 1
         # self.m_comboBox3=wx.ComboBox()
         # self.m_comboBox4=wx.ComboBox()
+        self.Y_pred = None
         menub = wx.MenuBar()
         fmenu = wx.Menu()
         fmenu.Append(wx.ID_OPEN)
@@ -142,7 +180,8 @@ class MyFrame(wx.Frame):
 
         self.valueCheck = ""
         self.hearts = None
-        self._file = ''
+        self._file = 'h.csv'
+        self.f = ['h.csv']
         self.checkedValue = 0
 
         self.SetSizer(self.sizer)
@@ -179,7 +218,28 @@ class MyFrame(wx.Frame):
             self._grid.LoadFile(self._file)
             self._grid.SetColReadOnly(0)
             self.sizer.Add(self._grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        self.Layout()
+
+        if self.m_comboBox2.Value == "Посмотреть урезанные данные для обучения":
+            hearts = pd.read_csv(self._file)
+            goal = hearts.columns[-1]
+            continuous_feature = [i for i in hearts.columns if hearts[i].nunique() < 10]
+            continuous_feature.remove(goal)
+            hearts = hearts.drop(continuous_feature, axis=1)
+            hearts = hearts.loc[hearts['Cholesterol'] != 0]
+
+            col = hearts.shape[1]
+            row = hearts.shape[0]
+            self.grid = wx.grid.Grid(self, -1)
+            self.grid.CreateGrid(row, col)
+            for i in range(col):
+                # self.grid.SetCellValue(0, i, str(int(hearts.iloc[0][i])))
+                for j in range(row):
+                    self.grid.SetCellValue(j, i, str(int(hearts.iloc[j][i])))
+            for i in range(col):
+                self.grid.SetColLabelValue(i, hearts.columns[i])
+
+            self.sizer.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        # self.Layout()
 
         if self.m_comboBox2.Value == "Построить гистограммы":
             hearts = pd.read_csv(self._file)
@@ -211,11 +271,145 @@ class MyFrame(wx.Frame):
             data = pd.read_csv(self._file)
             # continuous_feature = [i for i in hearts.columns if hearts[i].nunique() > 10]
             # train, test = train_test_split(data, test_size=0.3)
+            # self.Train_other_base()
             self.Train(data)
             # self.My_train(data)
+
+        if self.m_comboBox2.Value == "Обучение с урезанными данными":
+            data = pd.read_csv(self._file)
+            # continuous_feature = [i for i in hearts.columns if hearts[i].nunique() > 10]
+            # train, test = train_test_split(data, test_size=0.3)
+            self.Train_other_base()
+            # self.Train(data)
+            # self.My_train(data)
+
+        if self.m_comboBox2.Value == "Ввод данных":
+            # self.btn=wx.Button(self)
+            title = 'SubFrame {}'.format(self.frame_number)
+            frame = OtherFrame(title=title)
+            self.frame_number += 1
+            data = pd.read_csv(self._file)
+            goal = data.columns[-1]
+            continuous_feature = [i for i in data.columns if data[i].nunique() < 10]
+            # continuous_feature.remove(goal)
+            hearts = data.drop(continuous_feature, axis=1)
+            col = len(hearts.columns)
+            self.grid = wx.grid.Grid(self, -1)
+            self.grid.CreateGrid(2, col)
+            for i in range(col):
+                self.grid.SetCellValue(0, i, str(int(hearts.iloc[0][i])), )
+            for i in range(col):
+                self.grid.SetColLabelValue(i, hearts.columns[i])
+
+            # self.grid.SetRowSize(0, 60)
+            # self.grid.SetColSize(0, 120)
+            #
+            # self.grid.SetCellValue(0, 0, 'wxGrid is good')
+            #
+            # self.grid.SetCellValue(0, 3, 'This is read.only')
+            # self.grid.SetReadOnly(0, 3)
+            #
+            # self.grid.SetCellValue(3, 3, 'green on grey')
+            # self.grid.SetCellTextColour(3, 3, wx.GREEN)
+            # self.grid.SetCellBackgroundColour(3, 3, wx.LIGHT_GREY)
+            #
+            # self.grid.SetColFormatFloat(5, 6, 2)
+            # self.grid.SetCellValue(0, 6, '3.1415')
+            self.sizer.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+            # self.sizer.Add(self.btn, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         self.Layout()
+
+        self.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK, self.isGridCell, self.grid)
         self.Bind(wx.EVT_COMBOBOX, self.isChecked1, self.m_comboBox3)
-        # self.Bind(wx.EVT_COMBOBOX, self.isChecked2, self.m_comboBox4)
+
+    def Train_other_base(self):
+        hearts = pd.read_csv(self._file)
+        goal = hearts.columns[-1]
+        continuous_feature = [i for i in hearts.columns if hearts[i].nunique() < 10]
+        continuous_feature.remove(goal)
+        hearts = hearts.drop(continuous_feature, axis=1)
+        X, y = hearts.drop([goal], axis=1), hearts[goal]
+        X_train, X_val, y_train, y_val = train_test_split(X, y, random_state=30)
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        gaussian = GaussianNB()
+        gaussian.fit(X_train, y_train)
+        self.Y_pred = gaussian.predict(X_val)
+        # accuracy_nb = round(accuracy_score(y_test, Y_pred) * 100, 2)
+        # acc_gaussian = round(gaussian.score(X_train, y_train) * 100, 2)
+        accuracy = accuracy_score(y_val, self.Y_pred)
+        train_sizes, train_scores, test_scores = learning_curve(gaussian, X, y)
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        plt.fill_between(train_sizes,
+                         test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std,
+                         alpha=0.1,
+                         color="g", )
+        plt.plot(train_sizes, train_scores_mean, "o-", color="r", label="Training score"
+                 )
+        plt.plot(
+            train_sizes, test_scores_mean, "o-", color="g", label="Test score"
+        )
+        plt.legend(loc="best")
+        plt.title('accuracy: %.3f' % accuracy)
+        # plt.text(1,0, 1, "1")
+        plt.show()
+
+    def isGridCell(self, event):
+        # if len(self.sizer.GetChildren()) == 2:
+        #     for count in range(1):
+        #         self.sizer.Hide(1)
+        #         self.sizer.Remove(1)
+        #         self.sizer.Layout()
+        if len(self.sizer.GetChildren()) == 3:
+            for count in range(1):
+                self.sizer.Hide(2)
+                self.sizer.Remove(2)
+                self.sizer.Layout()
+        # if len(self.sizer.GetChildren()) == 4:
+        #     for count in range(3):
+        #         self.sizer.Hide(1)
+        #         self.sizer.Remove(1)
+        #         self.sizer.Layout()
+        self.label = wx.StaticText(self, label="")
+        Col = event.Row
+        dt = list()
+        for i in range(self.grid.GetNumberCols()):
+            dt.append(self.grid.GetCellValue(Col, i))
+        try:
+            ints = [eval(x) for x in dt]
+        except:
+            self.label.LabelText = "Некорректные данные"
+            self.sizer.Add(self.label, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+            self.Layout()
+
+            return
+        ints = np.array(ints)
+        hearts = pd.read_csv(self._file)
+        goal = hearts.columns[-1]
+        continuous_feature = [i for i in hearts.columns if hearts[i].nunique() < 10]
+        continuous_feature.remove(goal)
+        hearts = hearts.drop(continuous_feature, axis=1)
+        X, y = hearts.drop([goal], axis=1), hearts[goal]
+        X_train, X_val, y_train, y_val = train_test_split(X, y, random_state=30)
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        gaussian = GaussianNB()
+        gaussian.fit(X_train, y_train)
+        if gaussian.predict([ints]) == 1:
+            self.label.LabelText = "Болен"
+        else:
+            self.label.LabelText = "Не болен"
+
+        self.sizer.Add(self.label, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.Layout()
+        # print(gaussian.predict([ints]))
+
+    def isButton(self, event):
+        print("&")
 
     def My_train(self, data):
         goal = data.columns[-1]
@@ -259,7 +453,7 @@ class MyFrame(wx.Frame):
         # plt.text(1,0, 1, "1")
         plt.show()
 
-    def fit(self,X_test, means, probs, stds, y_test, y_train):
+    def fit(self, X_test, means, probs, stds, y_test, y_train):
         y_pred = []
         r = []
         # каждый элемент в валидационной части данных
@@ -291,10 +485,10 @@ class MyFrame(wx.Frame):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
         gaussian = GaussianNB()
         gaussian.fit(X_train, y_train)
-        Y_pred = gaussian.predict(X_test)
+        self.Y_pred = gaussian.predict(X_test)
         # accuracy_nb = round(accuracy_score(y_test, Y_pred) * 100, 2)
         # acc_gaussian = round(gaussian.score(X_train, y_train) * 100, 2)
-        accuracy = accuracy_score(y_test, Y_pred)
+        accuracy = accuracy_score(y_test, self.Y_pred)
         train_sizes, train_scores, test_scores = learning_curve(gaussian, X, y)
         train_scores_mean = np.mean(train_scores, axis=1)
         train_scores_std = np.std(train_scores, axis=1)
@@ -340,7 +534,7 @@ class MyFrame(wx.Frame):
 
                 plt.show()
                 return 0
-            sns.displot(x=self.m_comboBox3.Value, hue=self.hearts.columns[-1],data=self.hearts)
+            sns.displot(x=self.m_comboBox3.Value, hue=self.hearts.columns[-1], data=self.hearts)
             # отмечаем каждую точку наблюдений:
             # sns.rugplot(x=self.m_comboBox3.Value,
             #             data=self.hearts);
@@ -398,7 +592,7 @@ class MyFrame(wx.Frame):
                     plt.legend()
                 plt.show()
                 return 0
-            x_true_c, x_false_c = x_true.drop(columns=a[continuous_feature.index(self.m_comboBox3.Value)], axis=1),\
+            x_true_c, x_false_c = x_true.drop(columns=a[continuous_feature.index(self.m_comboBox3.Value)], axis=1), \
                                   x_false.drop(columns=a[continuous_feature.index(self.m_comboBox3.Value)], axis=1)
             t_mean = np.mean(x_true_c)
             f_mean = np.mean(x_false_c)
@@ -412,12 +606,13 @@ class MyFrame(wx.Frame):
             pdf_t = normal_dist(x_true_c, t_mean, t_sd)
             pdf_f = normal_dist(x_false_c, f_mean, f_sd)
 
-            plt.plot(x_true_c, pdf_t,label="1")
-            plt.plot( x_false_c, pdf_f,label="0")
+            plt.plot(x_true_c, pdf_t, label="1")
+            plt.plot(x_false_c, pdf_f, label="0")
             plt.ylabel('Probability Density')
             plt.xlabel(self.m_comboBox3.Value)
             plt.legend()
             plt.show()
+
     # def isChecked2(self,event):
     #     data = pd.read_csv(self._file)
     #     continuous_feature = [i for i in data.columns if data[i].nunique() > 10]
