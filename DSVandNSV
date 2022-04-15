@@ -1,24 +1,16 @@
+import matplotlib.figure
 import wx
 import wx.grid
 import wx.xrc
 import random
 import numpy as np
+import print_DSV as dsv
 import matplotlib.pyplot as plt
+from PIL import Image
 import sympy
-#
-# x = sympy.symbols('x')
-# y = 1 + sympy.sin(sympy.sqrt(x**2 + 20))
-# lat = sympy.latex(y)
-#
-# #add text
-# plt.text(0, 0.6, r"$%s$" % lat, fontsize = 10)
-#
-# #hide axes
-# fig = plt.gca()
-# fig.axes.get_xaxis().set_visible(False)
-# fig.axes.get_yaxis().set_visible(False)
-# plt.draw() #or savefig
-# plt.show()
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+
+
 class MyFrame(wx.Frame):
 
     def __init__(self, parent):
@@ -27,91 +19,199 @@ class MyFrame(wx.Frame):
         self.panel = wx.Panel(self)
         self.gr = wx.GridBagSizer(8, 8)
 
-        text=wx.StaticText(self.panel,label="Введите кол-во переменных")
+        text = wx.StaticText(self.panel, label="Введите кол-во переменных")
         self.gr.Add(text, pos=(0, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
 
-        txctrl=wx.TextCtrl(self.panel,style=wx.TE_PROCESS_ENTER)
+        txctrl = wx.TextCtrl(self.panel, style=wx.TE_PROCESS_ENTER)
         self.gr.Add(txctrl, pos=(1, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
 
-        self.grid = wx.grid.Grid(self.panel)
+        self.figure = matplotlib.figure.Figure()
+        self.gs = self.figure.add_gridspec(2, 2)
+        self.axes = self.figure.add_subplot(self.gs[:, 0])
+        self.axes1 = self.figure.add_subplot(self.gs[:, 1])
+
+        self.canvas = FigureCanvasWxAgg(self.panel, -1, self.figure)
+
+        self.grid = wx.grid.Grid(self.panel, style=wx.TE_PROCESS_ENTER)
         self.grid.CreateGrid(1, 10)
         self.grid.Hide()
+
+        self.gr.Add(self.canvas, pos=(0, 8), span=(8, 8), border=5)
+
         self.gr.Add(self.grid, pos=(2, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
 
         # self.Centre(wx.BOTH)
-        self.Bind(wx.EVT_TEXT_ENTER, self.onParam,txctrl)
+        self.Bind(wx.EVT_TEXT_ENTER, self.onParam, txctrl)
+        self.Bind(wx.EVT_TEXT_ENTER, self.onGrid, self.grid)
         self.panel.SetSizer(self.gr)
+        self.panel.Layout()
 
-    def onParam(self,event):
-        num=int(event.GetString())
+    def onGrid(self, event):
+        print("!")
+
+    def _drawGraph(self, xvals, yvals):
+        # !!!
+        # Удалим предыдущий график, если он есть
+        self.axes.clear()
+
+        self.axes.clear()
+        # Нарисуем новый график
+        self.axes.plot(xvals, yvals)
+
+        # Включим сетку
+        self.axes.grid()
+
+        self.axes.legend([u"Gaussian"])
+
+        self.canvas.draw()
+
+    def _drawGraph1(self, xvals, yvals):
+        # !!!
+        # Удалим предыдущий график, если он есть
+        self.axes1.clear()
+
+        self.axes1.clear()
+        # Нарисуем новый график
+        self.axes1.plot(xvals, yvals)
+
+        # Включим сетку
+        self.axes1.grid()
+
+        self.axes1.legend([u"Gaussian"])
+
+        self.canvas.draw()
+
+    def onParam(self, event):
+        num = int(event.GetString())
         print(len(self.gr.GetChildren()))
-        if len(self.gr.GetChildren()) == 5:
-            self.gr.Remove(4)
-            self.Layout()
-        if len(self.gr.GetChildren())==4:
-            self.gr.Remove(3)
-            self.Layout()
-
+        while len(self.gr.GetChildren()) != 3:
+            self.gr.Hide(len(self.gr.GetChildren()) - 1)
+            self.gr.Remove(len(self.gr.GetChildren()) - 1)
 
         self.grid.Destroy()
         self.grid = wx.grid.Grid(self.panel)
         self.grid.CreateGrid(2, num)
-        self.grid.SetRowLabelValue(0,"x_i")
-        self.grid.SetRowLabelValue(1,"p_i")
+        self.grid.SetRowLabelValue(0, "x_i")
+        self.grid.SetRowLabelValue(1, "p_i")
         for i in range(num):
-            self.grid.SetColLabelValue(i, f"{i+1}")
+            self.grid.SetColLabelValue(i, f"{i + 1}")
         self.gr.Add(self.grid, pos=(2, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
 
-        but1=wx.Button(self.panel)
-        but1.Label="Заполнить величины"
+        but1 = wx.Button(self.panel)
+        but1.Label = "Заполнить величины"
         self.gr.Add(but1, pos=(3, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
 
-        but2=wx.Button(self.panel)
-        but2.Label="Вычислить"
+        but2 = wx.Button(self.panel)
+        but2.Label = "Вычислить"
         self.gr.Add(but2, pos=(4, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
 
         self.panel.SetSizer(self.gr)
         self.panel.Layout()
-        self.Bind(wx.EVT_BUTTON,self.onBut1,but1)
-        self.Bind(wx.EVT_BUTTON,self.onBut2,but2)
+        self.Bind(wx.EVT_BUTTON, self.onBut1, but1)
+        self.Bind(wx.EVT_BUTTON, self.onBut2, but2)
 
-    def onBut1(self,event):
-        size=self.grid.GetNumberCols()
-        arr_x = random.sample(range(10+size), size)
+    def onBut1(self, event):
+        size = self.grid.GetNumberCols()
+        arr_x = random.sample(range(10 + size), size)
         arr_x.sort()
         for i in range(size):
             self.grid.SetCellValue(0, i, str(arr_x[i]))
         for i in range(size):
             self.grid.SetCellValue(1, i, str(0))
-        self.arr_x=np.array(arr_x)
-    def onBut2(self,event):
-        arr_p=list()
-        s=""
-        for i in range(self.grid.GetNumberCols()):
-            arr_p.append(float(self.grid.GetCellValue(1, i)))
-        arr_p=np.array(arr_p)
+        self.arr_x = np.array(arr_x)
+
+    def onBut2(self, event):
+        print(len(self.gr.GetChildren()))
+        if len(self.gr.GetChildren()) == 9:
+            self.gr.Hide(8)
+            self.gr.Remove(8)
+        if len(self.gr.GetChildren()) == 8:
+            self.gr.Hide(7)
+            self.gr.Remove(7)
+            self.gr.Hide(6)
+            self.gr.Remove(6)
+            self.Layout()
+        arr_p = list()
+        self.arr_x = list()
+        try:
+            for i in range(self.grid.GetNumberCols()):
+                self.arr_x.append(float(self.grid.GetCellValue(0, i)))
+            for i in range(self.grid.GetNumberCols()):
+                arr_p.append(float(self.grid.GetCellValue(1, i)))
+        except:
+            print("nope")
+            return
+
+        arr_p = np.array(arr_p)
+        self.arr_p = arr_p
         if arr_p.sum() != 1:
             print("Неверно")
             return
-        M_X=np.dot(self.arr_x,arr_p)
-        D_X=np.var(self.arr_x)
-        Std=np.std(self.arr_x)
-        stattxt=wx.StaticText(self.panel)
-        stattxt.LabelText=f"{M_X}-мат.ожидание\n{D_X}-дисперсия\n{Std}-стандартное отклонение"
-        plt.plot(self.arr_x,arr_p)
-        plt.show()
-        # stattxt.LabelText=sympy.sqrt(12)
 
-        self.gr.Add(stattxt, pos=(5, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        x, p = self.arr_x, arr_p
+        M_X = dsv.M_X(x, p)[1]
+        D_X = dsv.D_X(x, p)[1]
+        Std = dsv.S_X(x, p)[1]
+        stattxt = wx.StaticText(self.panel)
+        stattxt.LabelText = f"{M_X}-мат.ожидание\n{D_X}-дисперсия\n{Std}-стандартное отклонение"
+        self._drawGraph(self.arr_x, arr_p)
+
+        bmp = wx.Bitmap("why.jpg")
+        bmp = self.scale_bitmap(bmp, 40, 40)
+        stb = wx.Button(self.panel, size=(50, 50), name="button")
+        stb.SetBitmap(bmp)
+
+        f_x = dsv.F_X(x, p)[0]
+        self._drawGraph1(x, x)
+
+        img = wx.Image("output1.png", type=wx.BITMAP_TYPE_ANY, index=-1)
+        sb = wx.StaticBitmap(self.panel, -1, wx.Bitmap(img))
+
+        self.gr.Add(stattxt, pos=(5, 0), flag=wx.LEFT | wx.BOTTOM, border=5)
+        self.gr.Add(stb, pos=(5, 1), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        self.gr.Add(sb, pos=(6, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+
+        self.gr.Layout()
+        self.Bind(wx.EVT_BUTTON, self.onWhyButt, stb)
+
     def __del__(self):
         pass
 
+    def scale_bitmap(self, bitmap, width, height):
+        image = bitmap.ConvertToImage()
+        image = image.Scale(width, height, wx.IMAGE_QUALITY_HIGH)
+        result = wx.Bitmap(image)
+        return result
+
+    def onWhyButt(self, event):
+        print(len(self.gr.GetChildren()))
+        while len(self.gr.GetChildren()) != 8:
+            self.gr.Hide(len(self.gr.GetChildren()) - 1)
+            self.gr.Remove(len(self.gr.GetChildren()) - 1)
+        x = self.arr_x
+        p = self.arr_p
+        #
+        # expr = rf"${M_X(x, p)[0]}" \
+        #        r"\\" \
+        #        rf"{D_X(x, p)[0]}" \
+        #        r"\\\\" \
+        #        rf"{S_X(x, p)[0]}$"
+        # sympy.preview(expr, viewer='file', filename='output.png')
+        dsv.Show(x, p)
+        img = wx.Image("output.png", type=wx.BITMAP_TYPE_ANY, index=-1)
+        sb = wx.StaticBitmap(self.panel, -1, wx.Bitmap(img))
+        self.gr.Add(sb, pos=(6, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        self.gr.Layout()
+
+    def resize_image(self, input_image_path,
+                     output_image_path,
+                     size):
+        original_image = Image.open(input_image_path)
+        resized_image = original_image.resize(size)
+        return
+
 
 app = wx.App()
-
 wnd = MyFrame(None)
 wnd.Show()
 app.MainLoop()
-# x = sympy.symbols('x')
-# expr = sympy.sin(sympy.sqrt(x**2 + 20)) + 1
-# sympy.preview(expr, viewer='file', filename='output.png')
