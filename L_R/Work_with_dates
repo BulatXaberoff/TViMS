@@ -1,0 +1,104 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+import linear_regression as l_r
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
+# from myplot import plot_verticles
+
+
+def f_h(height):
+    return height * 2.54
+
+
+def f_w(weight):
+    return weight / 2.205
+
+
+def F_xyz(a, b):
+    x = np.random.rand(100) * 20.0 - 10.0
+    y = np.random.rand(100) * 20.0 - 10.0
+
+    x.sort()
+    y.sort()
+
+    xgrid, ygrid = np.meshgrid(x, y)
+    return xgrid, ygrid, a * xgrid + b * xgrid
+
+# def f(a, b, x):
+#     return a * x + b
+
+
+def show():
+    df = preparation()
+    X = df.iloc[:, :-1].values
+    y = df.iloc[:, 2].values
+    # X = dataset.iloc[:, :-1].values
+    # y = dataset.iloc[:, 2].values
+    # l_r.regression_func(np.array(x_height[:100]),np.array(x_weight[:100]))
+    # scaler = StandardScaler()
+    # scaled_data = scaler.fit_transform(df)
+    #
+    # X = scaled_data.T[0]
+    # y = scaled_data.T[1]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+    lin_reg = LinearRegression()
+    lin_reg.fit(X_train, y_train)
+    y_pred = lin_reg.predict(X_test)
+    df_M = df.loc[(df.Пол == 1.0)][:110]
+    df_F = df.loc[(df.Пол == 0.0)][:110]
+    df1=df_M.append(df_F)
+    sns.lmplot(x='Рост',y='Вес',hue='Пол',data=df1)
+    plt.show()
+
+def preparation():
+    dataset = pd.read_csv("weight-height.csv")
+    dataset['Gender'].replace('Female', 0, inplace=True)
+    dataset['Gender'].replace('Male', 1, inplace=True)
+    arr = np.array(dataset)
+    x_sex = dataset.iloc[:, 0].values
+    x_height = [f_h(x) for x in arr[:, -2]]
+    x_weight = [f_w(x) for x in arr[:, -1]]
+    x = np.array([x_sex, x_height, x_weight])
+    x = x.transpose()
+    # new_columns=['Gender',"Height","Weight"]
+    new_columns=['Пол','Рост','Вес']
+    df = pd.DataFrame(x, columns=new_columns)
+    # df.rename(columns={'S':'Gender','H':'Height','W':'Weight'})
+    return df
+
+
+# read_data()
+
+# X = df.iloc[:,0].values
+# y=df.iloc[:,1].values
+# z=dataset.iloc[:,0].values
+#
+# x_wh=scaled_data
+#
+# X_train, X_test, y_train, y_test = train_test_split(x_wh, z, test_size=0.3, random_state=0)
+# lin_reg = LinearRegression()
+# lin_reg.fit(X_train, y_train)
+# y_pred = lin_reg.predict(X_test)
+# print(lin_reg.coef_)
+
+#
+#
+# x,y1,z1=F_xyz(lin_reg.coef_[0],lin_reg.coef_[1])
+#
+#
+# fig = plt.figure()
+# axes = fig.add_subplot(projection='3d')
+#
+# axes.plot_surface(x, y1, z1, rstride=1, cstride=1,linewidth=0.5, edgecolors='k')
+# axes.scatter(x_wh.T[0], x_wh.T[1], z)
+#
+# axes.set_xlim(-10, 10)
+# axes.set_ylim(-10, 10)
+#
+# plt.show()
