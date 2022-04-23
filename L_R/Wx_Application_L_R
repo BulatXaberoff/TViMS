@@ -5,7 +5,42 @@ import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+import pandas as pd
+import Work_with_dates as wwd
+
 from linear_regression import *
+
+class OtherFrame(wx.Frame):
+    """
+    Class used for creating frames other than the main one
+    """
+
+    def __init__(self, title, parent=None):
+        wx.Frame.__init__(self, parent=parent, title=title)
+        # h = MyFrame1(None, title="Data Grid").f[0]
+        # self.panelOF=wx.Panel(self)
+        data=wwd.preparation()
+        col,row=data.shape[1],data.shape[0]
+        self.grid = wx.grid.Grid(self, -1)
+        self.grid.CreateGrid(row, col)
+        for i in range(col):
+            # self.grid.SetCellValue(0, i, str(int(hearts.iloc[0][i])))
+            for j in range(row):
+                self.grid.SetCellValue(j, i, str(int(data.iloc[j][i])))
+        for i in range(col):
+            self.grid.SetColLabelValue(i, data.columns[i])
+        # self.panelOF.Layout()
+
+        self.Layout()
+        self.Show()
+        wwd.show()
+        df_M = data.loc[(data.Пол == 1.0)][:110]
+        df_F = data.loc[(data.Пол == 0.0)][:110]
+        x_M = np.array(df_M.drop(columns=['Пол', 'Рост'], axis=1))
+        y_M = np.array(df_M.drop(columns=['Пол', 'Вес'], axis=1))
+        regression_func(x_M, y_M)
+
+
 
 class MyFrame1(wx.Frame):
     def __init__(self, parent):
@@ -29,6 +64,7 @@ class MyFrame1(wx.Frame):
         menubar.Append(create_base, "&Linear_Reg")
         self.Bind(wx.EVT_MENU, self.onData, item_base)
         self.Bind(wx.EVT_MENU,self.onEx_1,id=1)
+        self.Bind(wx.EVT_MENU, self.onEx_2, id=2)
 
         self.txt = wx.StaticText(self.panel, label="Введите кол-во переменных")
         self.txt.Hide()
@@ -66,13 +102,17 @@ class MyFrame1(wx.Frame):
         self.bSizer2.Layout()
 
 
+    def onEx_2(self,event):
+        title="1"
+        frame = OtherFrame(title)
+
     def onEx_1(self,event):
         self.txt.Hide()
 
-        arr_x = [-2, 0, 3, 7]
-        arr_y = [0.4, 0.1, 0.3, 0.2]
-        # arr_x=[12,9,8,14,15,11,10,15]
-        # arr_y=[42,107,100,60,78,79,90,54]
+        # arr_x = [-2, 0, 3, 7]
+        # arr_y = [0.4, 0.1, 0.3, 0.2]
+        arr_x=[12,9,8,14,15,11,10,15]
+        arr_y=[42,107,100,60,78,79,90,54]
         self.arr_x=arr_x
         self.arr_y=arr_y
         el=len(arr_x)
@@ -94,6 +134,7 @@ class MyFrame1(wx.Frame):
         self.bSizer2.Layout()
 
         regression_func(np.array(arr_x),np.array(arr_y))
+
 
 
     def onTxctrl(self,event):
