@@ -10,6 +10,20 @@ def f(a, b, x):
     return a * x + b
 
 
+def result(x, y):
+    power_x_i = np.array([np.power(el, 2) for el in x])
+    power_y_i = np.array([np.power(el, 2) for el in y])
+
+    x_i_y_i = x * y
+
+    b = len(x)
+    A = np.array([[np.sum(power_x_i), np.sum(x)], [np.sum(x), b]])
+    B = np.array([np.sum(x_i_y_i), np.sum(y)])
+
+    result = np.linalg.solve(A, B)
+    return result
+
+
 def regression_func(x, y):
     power_x_i = np.array([np.power(el, 2) for el in x])
     power_y_i = np.array([np.power(el, 2) for el in y])
@@ -21,12 +35,10 @@ def regression_func(x, y):
     B = np.array([np.sum(x_i_y_i), np.sum(y)])
 
     result = np.linalg.solve(A, B)
-    x_p = np.arange(-100, x.max()+100, 10)
-
-    y_p = np.array([f(result[0], result[1], xi) for xi in x_p])
+    x_p, y_p = build_equil(result, x)
 
     show_plot(x, x_p, y, y_p, result[0], result[1])
-
+    #
     mean_xy = np.mean(x_i_y_i)
     mean_x = np.mean(x)
     mean_y = np.mean(y)
@@ -43,17 +55,22 @@ def regression_func(x, y):
           f"coef_determination - {coef_determination}")
 
 
+def build_equil(result, x):
+    x_p = np.arange(-100, x.max() + 100, 10)
+    y_p = np.array([f(result[0], result[1], xi) for xi in x_p])
+    return x_p, y_p
+
+
 def show_plot(x, x_p, y, y_p, a, b):
-    ax_x=[0]*1000
-    ax_y=np.arange(-500,500,1)
+    ax_x = [0] * 1000
+    ax_y = np.arange(-500, 500, 1)
     fig = plt.figure(figsize=(8, 5))
     fig.suptitle('Linear Regression')
     ax = fig.add_subplot()
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
-    plt.plot(ax_x,ax_y,color='k')
-    plt.plot(ax_y, ax_x,color='k')
-
+    plt.plot(ax_x, ax_y, color='k')
+    plt.plot(ax_y, ax_x, color='k')
 
     plt.plot(x, y, ls="", marker="o", label="points")
     plt.plot(x_p, y_p, label=f'y={int(a * 100) / 100}*x+{int(b * 100) / 100}')
@@ -64,6 +81,199 @@ def show_plot(x, x_p, y, y_p, a, b):
 
     plt.show()
 
+
+def show_two_plot(x1, y1, x2, y2, a1=0, b1=0, a2=0, b2=0):
+    if (a1 and b1) == 0:
+        a1, b1 = result(x1, y1)
+    if (a2 and b2) == 0:
+        a2, b2 = result(x2, y2)
+    ax_x = [0] * 1000
+    ax_y = np.arange(-500, 500, 1)
+    fig = plt.figure(figsize=(8, 5))
+    fig.suptitle('Linear Regression')
+    ax = fig.add_subplot()
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    plt.plot(ax_x, ax_y, color='k')
+    plt.plot(ax_y, ax_x, color='k')
+
+    ax1 = plt.subplot(2, 2, 1)
+    plt.plot(ax_x, ax_y, color='k')
+    plt.plot(ax_y, ax_x, color='k')
+    plt.plot(x1[:25, :], y1[:25, :], ls="", color='b', marker="o", label="Муж")
+    # a1, b1 = result(x1, y1)
+    x_p1, y_p1 = build_equil((a1, b1), x1)
+    plt.plot(x_p1, y_p1, label=f'y={int(a1 * 100) / 100}*x+{int(b1 * 100) / 100}', color='b')
+    ax1.grid()
+
+    ax2 = plt.subplot(2, 2, 2)
+    plt.plot(ax_x, ax_y, color='k')
+    plt.plot(ax_y, ax_x, color='k')
+    plt.plot(x2[:25, :], y2[:25, :], ls="", color='r', marker="o", label="Жен")
+    # a2, b2 = result(x2, y2)
+    x_p2, y_p2 = build_equil((a2, b2), x2)
+    plt.plot(x_p2, y_p2, label=f'y={int(a2 * 100) / 100}*x+{int(b2 * 100) / 100}', color='r')
+    ax2.grid()
+
+    ax3 = plt.subplot(2, 1, 2)
+    plt.suptitle('Linear Regression')
+    plt.plot(ax_x, ax_y, color='k')
+    plt.plot(ax_y, ax_x, color='k')
+    plt.plot(x1[:25, :], y1[:25, :], ls="", color='b', marker="o", label="Муж")
+    # a1, b1 = result(x1, y1)
+    x_p1, y_p1 = build_equil((a1, b1), x1)
+    plt.plot(x_p1, y_p1, label=f'y={int(a1 * 100) / 100}*x+{int(b1 * 100) / 100}', color='b')
+
+    plt.plot(x2[:25, :], y2[:25, :], ls="", color='r', marker="o", label="Жен")
+    # a2, b2 = result(x2, y2)
+    x_p2, y_p2 = build_equil((a2, b2), x2)
+    plt.plot(x_p2, y_p2, label=f'y={int(a2 * 100) / 100}*x+{int(b2 * 100) / 100}', color='r')
+    ax3.grid()
+    plt.minorticks_on()
+    plt.grid(which='major')
+    plt.grid(which='minor')
+    plt.legend()
+
+    plt.show()
+
+
+def mean(x, y):
+    res = 0
+    str = r"x_{mean}=\frac{\sum_{i=1}^nx_i}{n}= " \
+          r"\frac{" \
+          fr"{x.sum()}" \
+          r"}{" \
+          fr"{len(x)}" \
+          r"}" \
+          fr"={np.mean(x)}" \
+          fr"\\" \
+          r"y_{mean}=\frac{\sum_{i=1}^ny_i}{n}= " \
+          r"\frac{" \
+          fr"{y.sum()}" \
+          r"}{" \
+          fr"{len(y)}" \
+          r"}" \
+          fr"={np.mean(y)}" \
+          fr"\\" \
+        # r"}"
+    return str, np.mean(x), np.mean(y)
+
+
+def around_num(num, num_after):
+    return int(num * num_after) / num_after
+
+
+def cov(x, y):
+    x_ = x - np.mean(x)
+    y_ = y - np.mean(y)
+
+    s = x_ * y_
+    s = s.sum()
+
+    res = around_num(s / len(x), 100)
+    str = r"cov(X;Y)=\frac{\sum_{i=1}^{n}(x_i-x_{mean})(y_i-y_{mean})}{n}=" \
+          r"\frac{" \
+          fr"{s}" \
+          r"}{" \
+          fr"{len(x)}" \
+          r"}=" \
+          fr"{res}"
+    return str, res
+
+
+def std(x, y):
+    x_ = x - np.mean(x)
+    y_ = y - np.mean(y)
+
+    x_pow = np.power(x_, 2)
+    y_pow = np.power(y_, 2)
+
+    s_x = x_pow.sum()
+    s_y = y_pow.sum()
+
+    res_x = around_num(np.sqrt(s_x / len(x)), 100)
+    res_y = around_num(np.sqrt(s_y / len(y)), 100)
+
+    str = r"\sigma_x=\sqrt{\frac{\sum_{i=1}^n(x_i-x)^2}{n}}=" \
+          r"\sqrt{\frac{" \
+          fr"{s_x}" \
+          r"}{" \
+          fr"{len(x)}" \
+          r"}}\approx" \
+          fr"{res_x}" \
+          r"\\" \
+          r"\sigma_x=\sqrt{\frac{\sum_{i=1}^n(x_i-x)^2}{n}}=" \
+          r"\sqrt{\frac{" \
+          fr"{s_y}" \
+          r"}{" \
+          fr"{len(y)}" \
+          r"}}\approx" \
+          fr"{res_y}" \
+          r""
+    return str, res_x, res_y
+
+
+def r(cov, std_x, std_y):
+    res = around_num(cov / (std_x * std_y), 100)
+    s = r"r=\frac{cov(X;Y)}{\sigma_{x}\cdot\sigma_{y}}=" \
+        r"\frac{" \
+        fr"{cov}" \
+        r"}{" \
+        fr"{std_x}\cdot{std_y}" \
+        r"}\approx" \
+        fr"{res}"
+    return s, res
+
+
+def a(r, std_x, std_y):
+    a = around_num((r * std_y) / std_x, 100)
+    s = r"a=\frac{r\cdot\sigma_y}{\sigma_x}\approx" \
+        r"\frac{" \
+        fr"{r}\cdot{std_y}" \
+        r"}{" \
+        fr"{std_x}" \
+        r"}\approx" \
+        fr"{a}"
+    return s, a
+
+
+def b(x_mean, y_mean, a):
+    b = around_num(y_mean - a * x_mean, 100)
+    s = r"b=-ax_{mean}+y_{mean}\approx" \
+        fr"-{a}\cdot{x_mean}+{y_mean}\approx{b}"
+    return s, b
+
+
+def build_bitmap(arr_x, arr_y, f_name):
+    mean_ = mean(arr_x, arr_y)
+    cov_ = cov(arr_x, arr_y)
+    std_ = std(arr_x, arr_y)
+    c_r = r(cov_[1], std_[1], std_[2])
+    c_a = a(c_r[1], std_[1], std_[2])
+    c_b = b(mean_[1], mean_[2], c_a[1])
+    expr = fr"${mean_[0]}" \
+           fr"\\" \
+           fr"{cov_[0]}" \
+           r"\\" \
+           fr"{std_[0]}" \
+           r"\\" \
+           fr"{c_r[0]}" \
+           fr"\\" \
+           fr"R=r^2\approx{np.power(c_r[1], 2)}" \
+           r"\\" \
+           fr"{c_a[0]}" \
+           r"\\" \
+           fr"{c_b[0]}" \
+           r"\\" \
+           fr"y={c_a[1]}x+{c_b[1]}$"
+    preview(expr, viewer='file', filename=f_name)
+    return c_a[1], c_b[1]
+
+#
+# arr_x = np.array([12, 9, 8, 14, 15, 11, 10, 15])
+# arr_y = np.array([42, 107, 100, 60, 78, 79, 90, 54])
+# build_bitmap(arr_x, arr_y)
+
 # plt.rcParams['text.usetex'] = True
 
 # x = np.array([12, 9, 8, 14, 15, 11, 10, 15])
@@ -72,5 +282,3 @@ def show_plot(x, x_p, y, y_p, a, b):
 # x=np.array([0,-1,-3,-5,1,3,4])
 # y=np.array([2,0,-2,-4,9,5,7])
 # regression_func(x, y)
-
-
