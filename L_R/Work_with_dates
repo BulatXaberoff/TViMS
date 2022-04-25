@@ -44,7 +44,7 @@ def show():
     # scaler = StandardScaler()
     # scaled_data = scaler.fit_transform(df)
     #
-    # X = scaled_data.T[0]
+    # X = scaled_dataa.T[0]
     # y = scaled_data.T[1]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
     lin_reg = LinearRegression()
@@ -56,7 +56,7 @@ def show():
     sns.lmplot(x='Рост',y='Вес',hue='Пол',data=df1)
     plt.show()
 
-def preparation():
+def preparation(s='Пол'):
     dataset = pd.read_csv("weight-height.csv")
     dataset['Gender'].replace('Female', 0, inplace=True)
     dataset['Gender'].replace('Male', 1, inplace=True)
@@ -67,7 +67,7 @@ def preparation():
     x = np.array([x_sex, x_height, x_weight])
     x = x.transpose()
     # new_columns=['Gender',"Height","Weight"]
-    new_columns=['Пол','Рост','Вес']
+    new_columns=['Пол', 'Рост', 'Вес']
     df = pd.DataFrame(x, columns=new_columns)
     # df.rename(columns={'S':'Gender','H':'Height','W':'Weight'})
     return df
