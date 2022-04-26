@@ -64,7 +64,7 @@ class OtherFrame(wx.Frame):
 class MyFrame1(wx.Frame):
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
-                          size=wx.Size(1100, 400), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          size=wx.Size(900, 900), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.panel = wx.Panel(self)
         self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
 
@@ -79,29 +79,31 @@ class MyFrame1(wx.Frame):
         item_base = create_base.Append(wx.ID_ANY, "Пустая колонка")
         create_base.Append(1, "1 пример")
         create_base.Append(2, "2 пример")
+        create_base.Append(3,"Пример с базой данных")
 
         menubar.Append(create_base, "&Linear_Reg")
         self.Bind(wx.EVT_MENU, self.onData, item_base)
         self.Bind(wx.EVT_MENU, self.onEx_1, id=1)
         self.Bind(wx.EVT_MENU, self.onEx_2, id=2)
+        self.Bind(wx.EVT_MENU, self.onEx_3, id=3)
 
-        self.txtctrl1 = wx.StaticText(self.panel, label="Введите кол-во переменных")
-        self.txtctrl1.Hide()
-        self.bSizer2.Add(self.txtctrl1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.stctxt = wx.StaticText(self.panel, label="Введите кол-во переменных")
+        self.stctxt.Hide()
+        # self.bSizer2.Add(self.stctxt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
         self.txctrl = wx.TextCtrl(self.panel, style=wx.TE_PROCESS_ENTER)
         self.txctrl.Hide()
-        self.bSizer2.Add(self.txctrl, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        # self.bSizer2.Add(self.txctrl, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         self.Bind(wx.EVT_TEXT_ENTER, self.onTxctrl, self.txctrl)
 
         self.grid = wx.grid.Grid(self.panel, style=wx.TE_PROCESS_ENTER)
         self.grid.CreateGrid(2, 12)
         self.grid.Hide()
-        self.bSizer2.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        # self.bSizer2.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
         self.button = wx.Button(self.panel, -1, label="12")
         self.button.Hide()
-        self.bSizer2.Add(self.button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        # self.bSizer2.Add(self.button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         self.Bind(wx.EVT_BUTTON, self.onSolve, self.button)
 
         self.SetMenuBar(menubar)
@@ -111,12 +113,31 @@ class MyFrame1(wx.Frame):
 
     def onSolve(self, event):
         print(len(self.bSizer2.GetChildren()))
-        while len(self.bSizer2.GetChildren()) != 4:
+        while len(self.bSizer2.GetChildren()) != 5:
             self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
             self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
-        self.staticBmp = wx.StaticBitmap(self.panel, -1, wx.Bitmap('output.png'))
+        arr_y = list()
+        arr_x = list()
+        try:
+            for i in range(self.grid.GetNumberCols()):
+                arr_x.append(float(self.grid.GetCellValue(0, i)))
+            for i in range(self.grid.GetNumberCols()):
+                arr_y.append(float(self.grid.GetCellValue(1, i)))
+        except:
+            print("nope")
+            return
+        arr_x=np.array(arr_x)
+        arr_y=np.array(arr_y)
+        f_name='buttonsolve.png'
+        try:
+            self.toCreateDataTable(arr_x,arr_y)
+            build_bitmap(arr_x, arr_y, f_name)
+        except:
+            print(Exception)
+        self.staticBmp = wx.StaticBitmap(self.panel, -1, wx.Bitmap(f_name))
         self.bSizer2.Add(self.staticBmp, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         self.bSizer2.Layout()
+        regression_func(arr_x, arr_y)
 
 
     def predict(self,gender,height):
@@ -127,12 +148,129 @@ class MyFrame1(wx.Frame):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
         lin_reg.fit(X_train,y_train)
         return lin_reg.predict([[int(gender),int(height)]])
-    def onEx_2(self, event):
-        global a1,b1,a2,b2
+
+
+    def toCreateDataTable(self, arr_x, arr_y):
+        el = len(arr_x)
+        self.grid = wx.grid.Grid(self.panel, -1, style=wx.TE_PROCESS_ENTER)
+        self.grid.CreateGrid(2, el)
+        self.grid.SetRowLabelValue(0, "x_i")
+        self.grid.SetRowLabelValue(1, "y_i")
+        self.bSizer2.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        for i in range(el):
+            self.grid.SetColLabelValue(i, f"{i + 1}")
+        for i in range(el):
+            self.grid.SetCellValue(0, i, str(arr_x[i]))
+        for i in range(el):
+            self.grid.SetCellValue(1, i, str(arr_y[i]))
+        # x=np.array(arr_x).astype(float)
+        # y=np.array(arr_y).astype(float)
+        # dsv.Show(x,arr_y)
+        x_mn = np.mean(arr_x)
+        y_mn = np.mean(arr_y)
+        x = arr_x - x_mn
+        y = arr_y - y_mn
+        xy = x * y
+        x_pow = np.power(x, 2)
+        y_pow = np.power(y, 2)
+        self.grid_1 = wx.grid.Grid(self.panel, -1)
+        self.grid_1.CreateGrid(7, el)
+        self.grid_1.SetRowLabelValue(0, "x_cр")
+        self.grid_1.SetRowLabelValue(1, "y_cр")
+        self.grid_1.SetRowLabelValue(2, "x_i-x_ср")
+        self.grid_1.SetRowLabelValue(3, "y_i-y_ср")
+        self.grid_1.SetRowLabelValue(4, "(x_i-x_ср)(y_i-y_ср)")
+        self.grid_1.SetRowLabelValue(5, "(x_i-x_ср)^2")
+        self.grid_1.SetRowLabelValue(6, "(y_i-y_ср)^2")
+        for i in range(el):
+            self.grid_1.SetColLabelValue(i, f"{i + 1}")
+        for i in range(el):
+            self.grid_1.SetCellValue(0, i, str(x_mn))
+        for i in range(el):
+            self.grid_1.SetCellValue(1, i, str(y_mn))
+        for i in range(el):
+            self.grid_1.SetCellValue(2, i, str(x[i]))
+        for i in range(el):
+            self.grid_1.SetCellValue(3, i, str(y[i]))
+        for i in range(el):
+            self.grid_1.SetCellValue(4, i, str(xy[i]))
+        for i in range(el):
+            self.grid_1.SetCellValue(5, i, str(x_pow[i]))
+        for i in range(el):
+            self.grid_1.SetCellValue(6, i, str(y_pow[i]))
+        self.bSizer2.Add(self.grid_1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+
+
+    def onPredict(self,event):
+        print(len(self.bSizer2.GetChildren()))
+        while len(self.bSizer2.GetChildren())!=4:
+            self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
+            self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
+        s=event.GetString()
+        s_p = repl.split(',',s)
+        try:
+            if int(s_p[0]) == 1:
+                y = a1 * int(s_p[1]) + a2
+            elif int(s_p[0]) == 0:
+                y = a2 * int(s_p[1]) + a2
+            else:
+                self.txt1 = wx.StaticText(self.panel, label="Неправильно введено")
+                self.txt1.SetForegroundColour((255, 0, 0))  # set text color
+                self.bSizer2.Add(self.txt1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+            self.txt1 = wx.StaticText(self.panel, label=str(self.predict(s_p[0], s_p[1])))
+            self.bSizer2.Add(self.txt1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        except:
+            self.txt1 = wx.StaticText(self.panel, label="Неправильно введено")
+            self.txt1.SetForegroundColour((255, 0, 0))
+            self.bSizer2.Add(self.txt1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.bSizer2.Layout()
+
+    def onEx_1(self, event):
+        self.stctxt.Hide()
+
+        arr_x = np.array([-2, 0, 3, 7])
+        arr_y = np.array([0.4, 0.1, 0.3, 0.2])
+        self.arr_x = arr_x
+        self.arr_y = arr_y
+
         while len(self.bSizer2.GetChildren()) != 0:
             self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
             self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
-        self.bSizer1 = wx.BoxSizer(wx.VERTICAL)
+        self.toCreateDataTable(arr_x, arr_y)
+        filename = 'ex1'
+        build_bitmap(arr_x, arr_y, filename)
+        self.staticBmp = wx.StaticBitmap(self.panel, -1, wx.Bitmap(filename))
+        self.bSizer2.Add(self.staticBmp, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.bSizer2.Layout()
+
+        regression_func(np.array(arr_x), np.array(arr_y))
+    def onEx_2(self, event):
+        self.stctxt.Hide()
+
+        arr_x=np.array([12,9,8,14,15,11,10,15])
+        arr_y=np.array([42,107,100,60,78,79,90,54])
+        self.arr_x = arr_x
+        self.arr_y = arr_y
+
+        while len(self.bSizer2.GetChildren()) != 0:
+            self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
+            self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
+        self.toCreateDataTable(arr_x, arr_y)
+        filename = 'ex1'
+        build_bitmap(arr_x, arr_y, filename)
+        self.staticBmp = wx.StaticBitmap(self.panel, -1, wx.Bitmap(filename))
+        self.bSizer2.Add(self.staticBmp, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.bSizer2.Layout()
+
+        regression_func(np.array(arr_x), np.array(arr_y))
+    def onEx_3(self,event):
+        global a1, b1, a2, b2
+        while len(self.bSizer2.GetChildren()) != 0:
+            self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
+            self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
+        self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
         data = Data.copy()
         f_name1 = 'd1.png'
         f_name2 = 'd2.png'
@@ -149,118 +287,27 @@ class MyFrame1(wx.Frame):
 
         self.staticBmp1 = wx.StaticBitmap(self.panel, -1, wx.Bitmap(f_name1))
         self.staticBmp2 = wx.StaticBitmap(self.panel, -1, wx.Bitmap(f_name2))
-        self.txt=wx.StaticText(self.panel,label="Введите свой возраст и рост")
-        self.txtctrl1=wx.TextCtrl(self.panel, style=wx.TE_PROCESS_ENTER)
+        self.txt = wx.StaticText(self.panel, label="Введите свой пол и рост")
+        self.stctxt = wx.TextCtrl(self.panel, style=wx.TE_PROCESS_ENTER)
 
-        self.bSizer1.Add(self.staticBmp1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        self.bSizer1.Add(self.staticBmp2, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        self.bSizer1.Add(self.txt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        self.bSizer1.Add(self.txtctrl1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.bSizer2.Add(self.staticBmp1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.bSizer2.Add(self.staticBmp2, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.bSizer2.Add(self.txt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.bSizer2.Add(self.stctxt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
-        self.bSizer1.Layout()
+        self.bSizer2.Layout()
+        self.panel.Layout()
+        self.panel.SetSizer(self.bSizer2)
         self.Layout()
-        self.Bind(wx.EVT_TEXT_ENTER, self.onPredict, self.txtctrl1)
-        self.panel.SetSizer(self.bSizer1)
+        self.Bind(wx.EVT_TEXT_ENTER, self.onPredict, self.stctxt)
 
         title = "1"
         frame = OtherFrame(title)
 
-    def onPredict(self,event):
-        print(len(self.bSizer1.GetChildren()))
-        while len(self.bSizer1.GetChildren())!=4:
-            self.bSizer1.Hide(len(self.bSizer1.GetChildren()) - 1)
-            self.bSizer1.Remove(len(self.bSizer1.GetChildren()) - 1)
-        s=event.GetString()
-        s_p = repl.split(',',s)
-        if int(s_p[0])==1:
-            y=a1*int(s_p[1])+a2
-        else:
-            y=a2*int(s_p[1])+a2
-        self.txt1=wx.StaticText(self.panel,label=str(self.predict(s_p[0],s_p[1])))
-        self.bSizer1.Add(self.txt1,0, wx.ALIGN_CENTER | wx.ALL, 5)
-        self.bSizer1.Layout()
-
-    def onEx_1(self, event):
-        self.txtctrl1.Hide()
-
-        arr_x = np.array([-2, 0, 3, 7])
-        arr_y = np.array([0.4, 0.1, 0.3, 0.2])
-        # arr_x=np.array([12,9,8,14,15,11,10,15])
-        # arr_y=np.array([42,107,100,60,78,79,90,54])
-        self.arr_x = arr_x
-        self.arr_y = arr_y
-        el = len(arr_x)
-
-        while len(self.bSizer2.GetChildren()) != 0:
-            self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
-            self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
-        self.grid = wx.grid.Grid(self.panel, -1, style=wx.TE_PROCESS_ENTER)
-        self.grid.CreateGrid(2, el)
-        self.grid.SetRowLabelValue(0, "x_i")
-        self.grid.SetRowLabelValue(1, "y_i")
-        self.bSizer2.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-
-        for i in range(el):
-            self.grid.SetColLabelValue(i, f"{i + 1}")
-
-        for i in range(el):
-            self.grid.SetCellValue(0, i, str(arr_x[i]))
-        for i in range(el):
-            self.grid.SetCellValue(1, i, str(arr_y[i]))
-        # x=np.array(arr_x).astype(float)
-        # y=np.array(arr_y).astype(float)
-        # dsv.Show(x,arr_y)
-
-        x_mn = np.mean(arr_x)
-        y_mn = np.mean(arr_y)
-
-        x = arr_x - x_mn
-        y = arr_y - y_mn
-
-        xy = x * y
-
-        x_pow = np.power(x, 2)
-        y_pow = np.power(y, 2)
-
-        self.grid_1 = wx.grid.Grid(self.panel, -1)
-        self.grid_1.CreateGrid(7, el)
-        self.grid_1.SetRowLabelValue(0, "x_cр")
-        self.grid_1.SetRowLabelValue(1, "y_cр")
-        self.grid_1.SetRowLabelValue(2, "x_i-x_ср")
-        self.grid_1.SetRowLabelValue(3, "y_i-y_ср")
-        self.grid_1.SetRowLabelValue(4, "(x_i-x_ср)(y_i-y_ср)")
-        self.grid_1.SetRowLabelValue(5, "(x_i-x_ср)^2")
-        self.grid_1.SetRowLabelValue(6, "(y_i-y_ср)^2")
-        for i in range(el):
-            self.grid_1.SetColLabelValue(i, f"{i + 1}")
-
-        for i in range(el):
-            self.grid_1.SetCellValue(0, i, str(x_mn))
-        for i in range(el):
-            self.grid_1.SetCellValue(1, i, str(y_mn))
-        for i in range(el):
-            self.grid_1.SetCellValue(2, i, str(x[i]))
-        for i in range(el):
-            self.grid_1.SetCellValue(3, i, str(y[i]))
-        for i in range(el):
-            self.grid_1.SetCellValue(4, i, str(xy[i]))
-        for i in range(el):
-            self.grid_1.SetCellValue(5, i, str(x_pow[i]))
-        for i in range(el):
-            self.grid_1.SetCellValue(6, i, str(y_pow[i]))
-
-        self.bSizer2.Add(self.grid_1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        filename = 'ex1'
-        build_bitmap(arr_x, arr_y, filename)
-        self.staticBmp = wx.StaticBitmap(self.panel, -1, wx.Bitmap(filename))
-        self.bSizer2.Add(self.staticBmp, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        self.bSizer2.Layout()
-
-        regression_func(np.array(arr_x), np.array(arr_y))
-
     def onTxctrl(self, event):
         print(len(self.bSizer2.GetChildren()))
         el = int(event.GetString())
+        self.el=el
         while len(self.bSizer2.GetChildren()) != 2:
             self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
             self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
@@ -268,26 +315,38 @@ class MyFrame1(wx.Frame):
         self.grid = wx.grid.Grid(self.panel, -1, style=wx.TE_PROCESS_ENTER)
         self.grid.CreateGrid(2, el)
         self.bSizer2.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        for i in range(2):
-            for j in range(el):
-                self.grid.SetCellValue(i, j, '0')
-
-        self.button = wx.Button(self.panel, -1, label="12")
-        self.bSizer2.Add(self.button, 0, wx.ALIGN_CENTER | wx.ALL, 10)
-        self.Bind(wx.EVT_BUTTON, self.onSolve, self.button)
+        self.slider = wx.Slider(self.panel, value=200, minValue=1, maxValue=250,
+                                style=wx.SL_HORIZONTAL | wx.SL_LABELS)
+        self.bSizer2.Add(self.slider,flag=wx.EXPAND|wx.ALL,border=10)
 
         self.bSizer2.Layout()
+        for i in range(2):
+            for j in range(el):
+                self.grid.SetCellValue(i, j, str(np.random.randint(20)))
+        self.button = wx.Button(self.panel, -1, label="Построить уравнение")
+        self.bSizer2.Add(self.button, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+
+        self.Bind(wx.EVT_BUTTON, self.onSolve, self.button)
+        self.Bind(wx.EVT_SCROLL,self.onSliderScroll,self.slider)
+        self.bSizer2.Layout()
+    def onSliderScroll(self,event):
+        val=event.GetEventObject().GetValue()
+        el=self.el
+        for i in range(2):
+            for j in range(el):
+                self.grid.SetCellValue(i, j, str(np.random.randint(val)))
 
     def onData(self, event):
         print(len(self.bSizer2.GetChildren()))
-        i = len(self.bSizer2.GetChildren()) - 1
+        while len(self.bSizer2.GetChildren()) !=0:
+            self.bSizer2.Hide(len(self.bSizer2.GetChildren())-1)
+            self.bSizer2.Remove(len(self.bSizer2.GetChildren())-1)
+        self.stctxt = wx.StaticText(self.panel, label="Введите кол-во переменных")
+        self.bSizer2.Add(self.stctxt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
-        while len(self.bSizer2.GetChildren()) != 2:
-            self.bSizer2.Hide(i)
-            self.bSizer2.Remove(i)
-            i -= 1
-        self.txtctrl1.Show()
-        self.txctrl.Show()
+        self.txctrl = wx.TextCtrl(self.panel, style=wx.TE_PROCESS_ENTER)
+        self.bSizer2.Add(self.txctrl, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.Bind(wx.EVT_TEXT_ENTER, self.onTxctrl, self.txctrl)
 
         self.bSizer2.Layout()
         self.panel.Layout()
