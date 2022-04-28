@@ -126,8 +126,11 @@ class MyFrame(wx.Frame):
             f, F, V = convF.work_input_f(s)
             x_1, y_1 = convF.generation_To_arr(F.copy(), V.copy())
             x_2, y_2 = convF.generation_To_arr(f.copy(), V.copy())
-            convF.build_plots(x_1, y_1, F, 'F(x)')
-            convF.build_plots(x_2, y_2, f, 'f(x)')
+            convF.build_plots(x_1, y_1, F.copy(), x_2,y_2,f.copy())
+            convF.print_solvingMxDx(f.copy(),V)
+            self.boxS.Add(wx.StaticBitmap(self.panel, -1, wx.Bitmap("p.png")),
+                          0, wx.ALIGN_CENTER | wx.ALL, 5)
+            # convF.build_plots(x_2, y_2, f, 'f(x)')
             self.boxS.Layout()
             self.Layout()
             self.panel.Layout()
