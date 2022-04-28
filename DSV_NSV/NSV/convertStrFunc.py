@@ -56,7 +56,7 @@ def build_func(s, f):
 
     expr = fr"{f}(x)" \
            r"=\begin{cases}" \
-           fr"{s}\\" \
+           fr"{s}" \
            r" \end{cases}"
     return expr
 
@@ -257,23 +257,104 @@ def generation_To_arr(F, V):
     return arr_x,arr_y
     # for i in range(len(F)):
 
-def build_plots(x,y,x_name,sname=''):
+def build_plots(x1,y1,f_name1,x2,y2,f_name2):
     axes1 = np.linspace(-100, 100)
     axes2 = [0] * len(axes1)
+    fig = plt.figure(figsize=(12, 6))
+    ax = fig.add_subplot()
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+
+
+
+    ax1=plt.subplot(1,2,1)
     plt.plot(axes1, axes2, color='k')
     plt.plot(axes2, axes1, color='k')
-    plt.suptitle(sname)
-    for i in range(len(x)):
-        plt.plot(x[i],y[i],label=x_name[i])
-    plt.legend()
+    for i in range(len(x1)):
+        plt.plot(x1[i],y1[i],label=f_name1[i])
+    ax1.legend()
+    ax1.grid()
+    ax1.set_ylim(-20, 20)
+    ax1.set_xlim(-20, 20)
 
-    plt.grid()
+    ax2=plt.subplot(1,2,2)
+    plt.plot(axes1, axes2, color='k')
+    plt.plot(axes2, axes1, color='k')
+    for i in range(len(x2)):
+        plt.plot(x2[i], y2[i], label=f_name2[i])
+    ax1.legend()
+    ax2.grid()
+    ax2.set_ylim(-20, 20)
+    ax2.set_xlim(-20, 20)
     # plt.minorticks_on()
     # plt.grid(which='major')
     # plt.grid(which='minor')
 
     plt.show()
 
+def calcul(f, values):
+    solve = list()
+    solve.append(sympy.integrate(eval(f[0]), (x, sympy.oo, values[0][0])))
+    solve.append(sympy.integrate(eval(f[1]), (x, values[1][0], values[1][1])))
+    solve.append(sympy.integrate(eval(f[2]), (x, values[2][0], sympy.oo)))
+    return solve
+
+
+def print_def_integrals(f, values):
+    s = ""
+    val = list()
+    for v in values:
+        val.append(ret_nums(v))
+    s += latex(Integral(eval(f[0]), (x, sympy.oo, val[0][0])))+"+"
+    s += latex(Integral(eval(f[1]), (x, val[1][0], val[1][1])))+"+"
+    s += latex(Integral(eval(f[2]), (x, val[2][0], sympy.oo)))
+    return s
+
+
+def M_X(f, vaules):
+    M_Xf=f_Xx(f)
+    val = list()
+    for v in vaules:
+        val.append(ret_nums(v))
+    return around_num(np.sum(calcul(M_Xf, val)), 100)
+
+
+def f_Xx(f):
+    foo = list()
+    for i in f:
+        foo.append(i + "*x")
+    return foo
+
+def f_Xxx(f):
+    foo = list()
+    for i in f:
+        foo.append(i + "*x**2")
+    return foo
+
+
+def D_X(f, values, M_x_s):
+    temp = f_Xxx(f)
+    val = list()
+    for i in f:
+        temp.append(i + "*x**2")
+    for v in values:
+        val.append(ret_nums(v))
+    fx_xx = around_num(np.sum(calcul(temp, val)), 100)
+    return fx_xx - M_x_s ** 2
+
+
+x = sympy.Symbol('x')
+
+
+def print_solvingMxDx(f,V):
+    m_x = M_X(f, V)
+    d_x = D_X(f, V, m_x)
+    # print(f"{m_x}\n{d_x}")
+    expr = r"$M[X]=\int_{-\infty}^{+\infty} f(x)xdx=" \
+           fr"{print_def_integrals(f_Xx(f), V)}={m_x}" \
+           r"\\D[X]=\int_{-\infty}^{+\infty} f(x)x^2dx=" \
+           fr"{print_def_integrals(f_Xxx(f), V)}={d_x}$"
+    preview(expr, viewer='file', filename='p.png')
 
 x = sympy.Symbol('x')
 # s = "sin(x),x<1&pi**x/E,1<x<4&3,5<x<6&1,x>10"
