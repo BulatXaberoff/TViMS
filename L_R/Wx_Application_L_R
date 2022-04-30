@@ -1,7 +1,6 @@
 import wx
 import wx.xrc
 import wx.grid
-import print_DSV as dsv
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,6 +17,7 @@ Data = wwd.preparation()
 a1, b1 = (None, None)
 a2, b2 = (None, None)
 lin_reg = LinearRegression()
+
 
 class OtherFrame(wx.Frame):
     """
@@ -37,9 +37,9 @@ class OtherFrame(wx.Frame):
             for j in range(row):
                 self.grid.SetCellValue(j, i, str(int(data.iloc[j][i])))
 
-        self.grid.SetColLabelValue(0, data.columns[0]+"(1-муж,0-жен)")
-        self.grid.SetColLabelValue(1, data.columns[1]+"(см)")
-        self.grid.SetColLabelValue(2, data.columns[2]+"(кг)")
+        self.grid.SetColLabelValue(0, data.columns[0] + "(1-муж,0-жен)")
+        self.grid.SetColLabelValue(1, data.columns[1] + "(см)")
+        self.grid.SetColLabelValue(2, data.columns[2] + "(кг)")
 
         # self.panelOF.Layout()
 
@@ -50,12 +50,12 @@ class OtherFrame(wx.Frame):
         df_M = data.loc[(data.Пол == 1.0)][:110]
         df_F = data.loc[(data.Пол == 0.0)][:110]
 
-        x_M = np.array(df_M.drop(columns=['Пол', 'Рост'], axis=1))
-        y_M = np.array(df_M.drop(columns=['Пол', 'Вес'], axis=1))
+        x_M = np.array(df_M.drop(columns=['Пол', 'Вес'], axis=1))
+        y_M = np.array(df_M.drop(columns=['Пол', 'Рост'], axis=1))
 
-        x_F = np.array(df_F.drop(columns=['Пол', 'Рост'], axis=1))
-        y_F = np.array(df_F.drop(columns=['Пол', 'Вес'], axis=1))
-        show_two_plot(x_M, y_M, x_F, y_F,a1,b1,a2,b2)
+        x_F = np.array(df_F.drop(columns=['Пол', 'Вес'], axis=1))
+        y_F = np.array(df_F.drop(columns=['Пол', 'Рост'], axis=1))
+        show_two_plot(x_M, y_M, x_F, y_F, a1, b1, a2, b2)
 
         # regression_func(x_M,y_M)
         # regression_func(x_F,y_F)
@@ -79,7 +79,7 @@ class MyFrame1(wx.Frame):
         item_base = create_base.Append(wx.ID_ANY, "Пустая колонка")
         create_base.Append(1, "1 пример")
         create_base.Append(2, "2 пример")
-        create_base.Append(3,"Пример с базой данных")
+        create_base.Append(3, "Пример с базой данных")
 
         menubar.Append(create_base, "&Linear_Reg")
         self.Bind(wx.EVT_MENU, self.onData, item_base)
@@ -126,11 +126,11 @@ class MyFrame1(wx.Frame):
         except:
             print("nope")
             return
-        arr_x=np.array(arr_x)
-        arr_y=np.array(arr_y)
-        f_name='buttonsolve.png'
+        arr_x = np.array(arr_x)
+        arr_y = np.array(arr_y)
+        f_name = 'buttonsolve.png'
         try:
-            self.toCreateDataTable(arr_x,arr_y)
+            self.toCreateDataTable(arr_x, arr_y)
             build_bitmap(arr_x, arr_y, f_name)
         except:
             print(Exception)
@@ -139,16 +139,14 @@ class MyFrame1(wx.Frame):
         self.bSizer2.Layout()
         regression_func(arr_x, arr_y)
 
-
-    def predict(self,gender,height):
+    def predict(self, gender, height):
         global lin_reg
-        data=Data.copy()
-        X=data.iloc[:,:-1].values
-        y=data.iloc[:,2].values
+        data = Data.copy()
+        X = data.iloc[:, :-1].values
+        y = data.iloc[:, 2].values
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-        lin_reg.fit(X_train,y_train)
-        return lin_reg.predict([[int(gender),int(height)]])
-
+        lin_reg.fit(X_train, y_train)
+        return lin_reg.predict([[int(gender), int(height)]])
 
     def toCreateDataTable(self, arr_x, arr_y):
         el = len(arr_x)
@@ -200,20 +198,28 @@ class MyFrame1(wx.Frame):
             self.grid_1.SetCellValue(6, i, str(y_pow[i]))
         self.bSizer2.Add(self.grid_1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
-
-
-    def onPredict(self,event):
+    def onPredict(self, event):
         print(len(self.bSizer2.GetChildren()))
-        while len(self.bSizer2.GetChildren())!=4:
+        while len(self.bSizer2.GetChildren()) != 4:
             self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
             self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
-        s=event.GetString()
-        s_p = repl.split(',',s)
+        s = event.GetString()
+        s_p = repl.split(',', s)
         try:
             if int(s_p[0]) == 1:
-                y = a1 * int(s_p[1]) + a2
+                y = a1 * int(s_p[1]) + b1
+                self.txt1 = wx.StaticText(self.panel, label=str(y))
+                self.bSizer2.Add(self.txt1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+                self.bSizer2.Layout()
+
+                return
             elif int(s_p[0]) == 0:
-                y = a2 * int(s_p[1]) + a2
+                y = a2 * int(s_p[1]) + b2
+                self.txt1 = wx.StaticText(self.panel, label=str(y))
+                self.bSizer2.Add(self.txt1, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+                self.bSizer2.Layout()
+
+                return
             else:
                 self.txt1 = wx.StaticText(self.panel, label="Неправильно введено")
                 self.txt1.SetForegroundColour((255, 0, 0))  # set text color
@@ -246,11 +252,12 @@ class MyFrame1(wx.Frame):
         self.bSizer2.Layout()
 
         regression_func(np.array(arr_x), np.array(arr_y))
+
     def onEx_2(self, event):
         self.stctxt.Hide()
 
-        arr_x=np.array([12,9,8,14,15,11,10,15])
-        arr_y=np.array([42,107,100,60,78,79,90,54])
+        arr_x = np.array([12, 9, 8, 14, 15, 11, 10, 15])
+        arr_y = np.array([42, 107, 100, 60, 78, 79, 90, 54])
         self.arr_x = arr_x
         self.arr_y = arr_y
 
@@ -265,7 +272,8 @@ class MyFrame1(wx.Frame):
         self.bSizer2.Layout()
 
         regression_func(np.array(arr_x), np.array(arr_y))
-    def onEx_3(self,event):
+
+    def onEx_3(self, event):
         global a1, b1, a2, b2
         while len(self.bSizer2.GetChildren()) != 0:
             self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
@@ -277,12 +285,12 @@ class MyFrame1(wx.Frame):
 
         df_M = data.loc[(data.Пол == 1.0)]
         df_F = data.loc[(data.Пол == 0.0)]
-        x_M = np.array(df_M.drop(columns=['Пол', 'Рост'], axis=1))
-        y_M = np.array(df_M.drop(columns=['Пол', 'Вес'], axis=1))
+        x_M = np.array(df_M.drop(columns=['Пол', 'Вес'], axis=1))
+        y_M = np.array(df_M.drop(columns=['Пол', 'Рост'], axis=1))
         a1, b1 = build_bitmap(x_M, y_M, f_name1)
 
-        x_F = np.array(df_F.drop(columns=['Пол', 'Рост'], axis=1))
-        y_F = np.array(df_F.drop(columns=['Пол', 'Вес'], axis=1))
+        x_F = np.array(df_F.drop(columns=['Пол', 'Вес'], axis=1))
+        y_F = np.array(df_F.drop(columns=['Пол', 'Рост'], axis=1))
         a2, b2 = build_bitmap(x_F, y_F, f_name2)
 
         self.staticBmp1 = wx.StaticBitmap(self.panel, -1, wx.Bitmap(f_name1))
@@ -307,7 +315,7 @@ class MyFrame1(wx.Frame):
     def onTxctrl(self, event):
         print(len(self.bSizer2.GetChildren()))
         el = int(event.GetString())
-        self.el=el
+        self.el = el
         while len(self.bSizer2.GetChildren()) != 2:
             self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
             self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
@@ -317,7 +325,7 @@ class MyFrame1(wx.Frame):
         self.bSizer2.Add(self.grid, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         self.slider = wx.Slider(self.panel, value=200, minValue=1, maxValue=250,
                                 style=wx.SL_HORIZONTAL | wx.SL_LABELS)
-        self.bSizer2.Add(self.slider,flag=wx.EXPAND|wx.ALL,border=10)
+        self.bSizer2.Add(self.slider, flag=wx.EXPAND | wx.ALL, border=10)
 
         self.bSizer2.Layout()
         for i in range(2):
@@ -327,20 +335,21 @@ class MyFrame1(wx.Frame):
         self.bSizer2.Add(self.button, 0, wx.ALIGN_CENTER | wx.ALL, 10)
 
         self.Bind(wx.EVT_BUTTON, self.onSolve, self.button)
-        self.Bind(wx.EVT_SCROLL,self.onSliderScroll,self.slider)
+        self.Bind(wx.EVT_SCROLL, self.onSliderScroll, self.slider)
         self.bSizer2.Layout()
-    def onSliderScroll(self,event):
-        val=event.GetEventObject().GetValue()
-        el=self.el
+
+    def onSliderScroll(self, event):
+        val = event.GetEventObject().GetValue()
+        el = self.el
         for i in range(2):
             for j in range(el):
                 self.grid.SetCellValue(i, j, str(np.random.randint(val)))
 
     def onData(self, event):
         print(len(self.bSizer2.GetChildren()))
-        while len(self.bSizer2.GetChildren()) !=0:
-            self.bSizer2.Hide(len(self.bSizer2.GetChildren())-1)
-            self.bSizer2.Remove(len(self.bSizer2.GetChildren())-1)
+        while len(self.bSizer2.GetChildren()) != 0:
+            self.bSizer2.Hide(len(self.bSizer2.GetChildren()) - 1)
+            self.bSizer2.Remove(len(self.bSizer2.GetChildren()) - 1)
         self.stctxt = wx.StaticText(self.panel, label="Введите кол-во переменных")
         self.bSizer2.Add(self.stctxt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
