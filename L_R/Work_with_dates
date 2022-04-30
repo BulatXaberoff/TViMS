@@ -53,8 +53,8 @@ def show():
     df_M = df.loc[(df.Пол == 1.0)][:110]
     df_F = df.loc[(df.Пол == 0.0)][:110]
     df1=df_M.append(df_F)
-    sns.lmplot(x='Рост',y='Вес',hue='Пол',data=df1)
-    plt.show()
+    # sns.lmplot(x='Рост',y='Вес',hue='Пол',data=df1)
+    # plt.show()
 
 def preparation(s='Пол'):
     dataset = pd.read_csv("weight-height.csv")
