@@ -83,6 +83,13 @@ def show_plot(x, x_p, y, y_p, a, b):
 
 
 def show_two_plot(x1, y1, x2, y2, a1=0, b1=0, a2=0, b2=0):
+    y1_name = f'{int(a1 * 100) / 100}*x+{int(b1 * 100) / 100}'
+    y2_name = f'{int(a2 * 100) / 100}*x+{int(b2 * 100) / 100}'
+    if b1 < 0:
+        y1_name = f'{int(a1 * 100) / 100}*x{int(b1 * 100) / 100}'
+    if b2 < 0:
+        y2_name = f'{int(a2 * 100) / 100}*x{int(b2 * 100) / 100}'
+
     if (a1 and b1) == 0:
         a1, b1 = result(x1, y1)
     if (a2 and b2) == 0:
@@ -103,7 +110,7 @@ def show_two_plot(x1, y1, x2, y2, a1=0, b1=0, a2=0, b2=0):
     plt.plot(x1[:25, :], y1[:25, :], ls="", color='b', marker="o", label="Муж")
     # a1, b1 = result(x1, y1)
     x_p1, y_p1 = build_equil((a1, b1), x1)
-    plt.plot(x_p1, y_p1, label=f'y={int(a1 * 100) / 100}*x+{int(b1 * 100) / 100}', color='b')
+    plt.plot(x_p1, y_p1, label=f'y={y1_name}', color='b')
     ax1.grid()
 
     ax2 = plt.subplot(2, 2, 2)
@@ -112,7 +119,7 @@ def show_two_plot(x1, y1, x2, y2, a1=0, b1=0, a2=0, b2=0):
     plt.plot(x2[:25, :], y2[:25, :], ls="", color='r', marker="o", label="Жен")
     # a2, b2 = result(x2, y2)
     x_p2, y_p2 = build_equil((a2, b2), x2)
-    plt.plot(x_p2, y_p2, label=f'y={int(a2 * 100) / 100}*x+{int(b2 * 100) / 100}', color='r')
+    plt.plot(x_p2, y_p2, label=f'y={y2_name}', color='r')
     ax2.grid()
 
     ax3 = plt.subplot(2, 1, 2)
@@ -122,16 +129,13 @@ def show_two_plot(x1, y1, x2, y2, a1=0, b1=0, a2=0, b2=0):
     plt.plot(x1[:25, :], y1[:25, :], ls="", color='b', marker="o", label="Муж")
     # a1, b1 = result(x1, y1)
     x_p1, y_p1 = build_equil((a1, b1), x1)
-    plt.plot(x_p1, y_p1, label=f'y={int(a1 * 100) / 100}*x+{int(b1 * 100) / 100}', color='b')
+    plt.plot(x_p1, y_p1, label=f'y={y1_name}', color='b')
 
     plt.plot(x2[:25, :], y2[:25, :], ls="", color='r', marker="o", label="Жен")
     # a2, b2 = result(x2, y2)
     x_p2, y_p2 = build_equil((a2, b2), x2)
-    plt.plot(x_p2, y_p2, label=f'y={int(a2 * 100) / 100}*x+{int(b2 * 100) / 100}', color='r')
+    plt.plot(x_p2, y_p2, label=f'y={y2_name}', color='r')
     ax3.grid()
-    plt.minorticks_on()
-    plt.grid(which='major')
-    plt.grid(which='minor')
     plt.legend()
 
     plt.show()
@@ -251,21 +255,38 @@ def build_bitmap(arr_x, arr_y, f_name):
     c_r = r(cov_[1], std_[1], std_[2])
     c_a = a(c_r[1], std_[1], std_[2])
     c_b = b(mean_[1], mean_[2], c_a[1])
-    expr = fr"${mean_[0]}" \
-           fr"\\" \
-           fr"{cov_[0]}" \
-           r"\\" \
-           fr"{std_[0]}" \
-           r"\\" \
-           fr"{c_r[0]}" \
-           fr"\\" \
-           fr"R=r^2\approx{np.power(c_r[1], 2)}" \
-           r"\\" \
-           fr"{c_a[0]}" \
-           r"\\" \
-           fr"{c_b[0]}" \
-           r"\\" \
-           fr"y={c_a[1]}x+{c_b[1]}$"
+    if c_b[1] < 0:
+        expr = fr"${mean_[0]}" \
+               fr"\\" \
+               fr"{cov_[0]}" \
+               r"\\" \
+               fr"{std_[0]}" \
+               r"\\" \
+               fr"{c_r[0]}" \
+               fr"\\" \
+               fr"R=r^2\approx{np.power(c_r[1], 2)}" \
+               r"\\" \
+               fr"{c_a[0]}" \
+               r"\\" \
+               fr"{c_b[0]}" \
+               r"\\" \
+               fr"y={c_a[1]}x{c_b[1]}$"
+    else:
+        expr = fr"${mean_[0]}" \
+               fr"\\" \
+               fr"{cov_[0]}" \
+               r"\\" \
+               fr"{std_[0]}" \
+               r"\\" \
+               fr"{c_r[0]}" \
+               fr"\\" \
+               fr"R=r^2\approx{np.power(c_r[1], 2)}" \
+               r"\\" \
+               fr"{c_a[0]}" \
+               r"\\" \
+               fr"{c_b[0]}" \
+               r"\\" \
+               fr"y={c_a[1]}x+{c_b[1]}$"
     preview(expr, viewer='file', filename=f_name)
     return c_a[1], c_b[1]
 
