@@ -301,9 +301,9 @@ def build_plots(x1,y1,f_names1,f_name1,x2,y2,f_names2,f_name2):
 
 def calcul(f, values):
     solve = list()
-    solve.append(sympy.integrate(eval(f[0]), (x, sympy.oo, values[0][0])))
+    solve.append(sympy.integrate(eval(f[0]), (x, -10000, values[0][0])))
     solve.append(sympy.integrate(eval(f[1]), (x, values[1][0], values[1][1])))
-    solve.append(sympy.integrate(eval(f[2]), (x, values[2][0], sympy.oo)))
+    solve.append(sympy.integrate(eval(f[2]), (x, values[2][0], 10000)))
     return solve
 
 
