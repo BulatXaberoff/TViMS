@@ -41,6 +41,7 @@ class MyFrame(wx.Frame):
         itemNSV = NSV.Append(wx.ID_ANY, "Пустая колонка")
         NSV.Append(1, "1 пример")
         NSV.Append(2, "2 пример")
+        NSV.Append(5, "3 пример")
 
         menubar.Append(DSV, "&DSV")
         menubar.Append(NSV, "&NSV")
@@ -52,6 +53,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onNSV, itemNSV)
         self.Bind(wx.EVT_MENU, self.onEx_1_NSV, id=1)
         self.Bind(wx.EVT_MENU, self.onEx_2_NSV, id=2)
+        self.Bind(wx.EVT_MENU, self.onEx_3_NSV, id=5)
 
         self.SetMenuBar(menubar)
         self.panel.Layout()
@@ -153,6 +155,33 @@ class MyFrame(wx.Frame):
         self.boxS.Layout()
         self.Layout()
         self.panel.Layout()
+    def onEx_3_NSV(self,event):
+        if self.checkBox:
+            print(len(self.boxS.GetChildren()))
+            while len(self.boxS.GetChildren()) != 0:
+                self.boxS.Hide(len(self.boxS.GetChildren()) - 1)
+                self.boxS.Remove(len(self.boxS.GetChildren()) - 1)
+        self.checkBox = True
+        s = '0,x<-1&3/(4-x**2),-1<=x<=1&0,x>1'
+        self.res = '$Func(x)=\\begin{cases}'
+        self.s = 'f_1(x),&x\\vee x_1\\\\f_2(x), & x \\vee x_2\\\\f_3(x), & x \\vee x_3 \\end{cases}$'
+        r = ['0,x<-1&', '3/(4-x**2),-1<=x<=1&', '0,x>1']
+        self.count = 3
+        self.CreateNSVDesign()
+        self.Show_Res(self.s)
+        self.boxS.Layout()
+        self.Layout()
+        self.panel.Layout()
+
+        for i in range(self.count):
+            txt = wx.TextCtrl(self.panel, id=i + 1,
+                              name=f"label {i + 1}", style=wx.TE_PROCESS_ENTER)
+            self.bxSizer.Add(txt)
+            txt.Label = r[i]
+
+        self.boxS.Layout()
+        self.Layout()
+        self.panel.Layout()
 
     def onTxT(self, event):
         self.lbl = wx.StaticText(self.panel, pos=(0, 50))
@@ -198,6 +227,9 @@ class MyFrame(wx.Frame):
             x_2, y_2 = convF.generation_To_arr(f.copy(), V.copy())
             # convF.build_plots(x_1, y_1, F, 'F(x)')
             # convF.build_plots(x_2, y_2, f, 'f(x)')
+            convF.print_solvingMxDx(f.copy(), V)
+            self.boxS.Add(wx.StaticBitmap(self.panel, -1, wx.Bitmap("p.png")),
+                          0, wx.ALIGN_CENTER | wx.ALL, 5)
             self.boxS.Layout()
             self.Layout()
             self.panel.Layout()
