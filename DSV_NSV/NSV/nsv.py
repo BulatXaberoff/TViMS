@@ -34,8 +34,8 @@ class MyFrame(wx.Frame):
         menubar = wx.MenuBar()
         DSV = wx.Menu()
         itemDSV = DSV.Append(wx.ID_ANY, "Пустая колонка")
-        DSV.Append(wx.ID_ANY, "1 пример")
-        DSV.Append(wx.ID_ANY, "2 пример")
+        DSV.Append(3, "1 пример")
+        DSV.Append(4, "2 пример")
 
         NSV = wx.Menu()
         itemNSV = NSV.Append(wx.ID_ANY, "Пустая колонка")
@@ -46,15 +46,58 @@ class MyFrame(wx.Frame):
         menubar.Append(NSV, "&NSV")
 
         self.Bind(wx.EVT_MENU, self.onDSV, itemDSV)
+        self.Bind(wx.EVT_MENU, self.onEx_1_DSV, id=3)
+        self.Bind(wx.EVT_MENU, self.onEx_2_DSV, id=4)
 
         self.Bind(wx.EVT_MENU, self.onNSV, itemNSV)
-        self.Bind(wx.EVT_MENU, self.onEx_1, id=1)
-        self.Bind(wx.EVT_MENU, self.onEx_2, id=2)
+        self.Bind(wx.EVT_MENU, self.onEx_1_NSV, id=1)
+        self.Bind(wx.EVT_MENU, self.onEx_2_NSV, id=2)
 
         self.SetMenuBar(menubar)
         self.panel.Layout()
 
-    def onEx_1(self, event):
+    def onEx_1_DSV(self, event):
+        self.create_DSV_Design()
+        x = [-2,0,3,7]
+        p = [0.4,0.1,0.3,0.2]
+        self.create_example_DSV(p, x)
+
+    def create_example_DSV(self, p, x):
+        num = len(x)
+        print(len(self.gr.GetChildren()))
+        while len(self.gr.GetChildren()) != 3:
+            self.gr.Hide(len(self.gr.GetChildren()) - 1)
+            self.gr.Remove(len(self.gr.GetChildren()) - 1)
+        self.txctrl.SetLabel(str(num))
+        self.grid = wx.grid.Grid(self.panel)
+        self.grid.CreateGrid(2, num)
+        self.grid.SetRowLabelValue(0, "x_i")
+        self.grid.SetRowLabelValue(1, "p_i")
+        for i in range(num):
+            self.grid.SetColLabelValue(i, f"{i + 1}")
+            self.grid.SetCellValue(0, i, str(x[i]))
+            self.grid.SetCellValue(1, i, str(p[i]))
+        self.gr.Add(self.grid, pos=(2, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        but1 = wx.Button(self.panel)
+        but1.Label = "Заполнить величины"
+        self.gr.Add(but1, pos=(3, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        but2 = wx.Button(self.panel)
+        but2.Label = "Вычислить"
+        self.gr.Add(but2, pos=(4, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        # self.boxS.Add(self.gr)
+        # self.panel.SetSizer(self.boxS)
+        self.boxS.Layout()
+        # self.panel.Layout()
+        self.Bind(wx.EVT_BUTTON, self.onBut1, but1)
+        self.Bind(wx.EVT_BUTTON, self.onBut2, but2)
+
+    def onEx_2_DSV(self, event):
+        self.create_DSV_Design()
+        x = [12,16,21,26,30]
+        p = [0.2,0.1,0.4,0.2,0.1]
+        self.create_example_DSV(p,x)
+
+    def onEx_1_NSV(self, event):
         if self.checkBox:
             print(len(self.boxS.GetChildren()))
             while len(self.boxS.GetChildren()) != 0:
@@ -83,7 +126,7 @@ class MyFrame(wx.Frame):
         self.Layout()
         self.panel.Layout()
 
-    def onEx_2(self, event):
+    def onEx_2_NSV(self, event):
         if self.checkBox:
             print(len(self.boxS.GetChildren()))
             while len(self.boxS.GetChildren()) != 0:
@@ -242,6 +285,9 @@ class MyFrame(wx.Frame):
         self.bxSizer.Layout()
 
     def onDSV(self, event):
+        self.create_DSV_Design()
+
+    def create_DSV_Design(self):
         if self.checkBox:
             print(len(self.boxS.GetChildren()))
             while len(self.boxS.GetChildren()) != 0:
@@ -250,13 +296,10 @@ class MyFrame(wx.Frame):
         self.checkBox = True
         self.gr = wx.GridBagSizer(8, 8)
         self.boxS.Add(self.gr)
-
         text = wx.StaticText(self.panel, label="Введите кол-во переменных")
         self.gr.Add(text, pos=(0, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
-
-        txctrl = wx.TextCtrl(self.panel, style=wx.TE_PROCESS_ENTER)
-        self.gr.Add(txctrl, pos=(1, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
-
+        self.txctrl = wx.TextCtrl(self.panel, style=wx.TE_PROCESS_ENTER)
+        self.gr.Add(self.txctrl, pos=(1, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
         self.figure = matplotlib.figure.Figure(figsize=(8, 4))
         # self.axes1 = self.figure.add_subplot()
         self.gs = self.figure.add_gridspec(2, 2)
@@ -264,18 +307,13 @@ class MyFrame(wx.Frame):
         self.axes1 = self.figure.add_subplot(self.gs[:, 1])
         # self.build_canvas1()
         # self.build_canvas2()
-
         self.canvas = FigureCanvasWxAgg(self.panel, -1, self.figure)
-
         self.grid = wx.grid.Grid(self.panel, style=wx.TE_PROCESS_ENTER)
         self.grid.CreateGrid(1, 10)
         self.grid.Hide()
-
         self.gr.Add(self.canvas, pos=(0, 8), span=(8, 8), border=5)
-
         self.gr.Add(self.grid, pos=(2, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
-
-        self.Bind(wx.EVT_TEXT_ENTER, self.onParam, txctrl)
+        self.Bind(wx.EVT_TEXT_ENTER, self.onParam, self.txctrl)
         self.Bind(wx.EVT_TEXT_ENTER, self.onGrid, self.grid)
         self.panel.SetSizer(self.boxS)
         self.panel.Layout()
@@ -449,53 +487,78 @@ class MyFrame(wx.Frame):
 
     def onBut2(self, event):
         print(len(self.gr.GetChildren()))
-        if len(self.gr.GetChildren()) == 9:
-            self.gr.Hide(8)
-            self.gr.Remove(8)
-        if len(self.gr.GetChildren()) == 8:
-            self.gr.Hide(7)
-            self.gr.Remove(7)
-            self.gr.Hide(6)
-            self.gr.Remove(6)
-            self.Layout()
+        # if len(self.gr.GetChildren()) == 9:
+        #     self.gr.Hide(8)
+        #     self.gr.Remove(8)
+        # if len(self.gr.GetChildren()) == 8:
+        #     self.gr.Hide(7)
+        #     self.gr.Remove(7)
+        #     self.gr.Hide(6)
+        #     self.gr.Remove(6)
+        #     self.Layout()
+        s=len(self.gr.GetChildren())
+        while len(self.gr.GetChildren())>6:
+            self.gr.Hide(len(self.gr.GetChildren()) - 1)
+            self.gr.Remove(len(self.gr.GetChildren()) - 1)
+        print(len(self.gr.GetChildren()))
         arr_p = list()
         self.arr_x = list()
+        stattxt = wx.StaticText(self.panel)
+        stattxt.SetForegroundColour((255, 0, 0))
         try:
             for i in range(self.grid.GetNumberCols()):
                 self.arr_x.append(float(self.grid.GetCellValue(0, i)))
             for i in range(self.grid.GetNumberCols()):
                 arr_p.append(float(self.grid.GetCellValue(1, i)))
         except:
-            print("nope")
+            stattxt.LabelText="Ошибочка"
+            self.gr.Add(stattxt, pos=(5, 0), flag=wx.LEFT | wx.BOTTOM, border=5)
+            self.gr.Layout()
             return
 
         arr_p = np.array(arr_p)
         self.arr_p = arr_p
-        if arr_p.sum() != 1:
-            print("Неверно")
+        if int(arr_p.sum()) != 1.0:
+            stattxt.LabelText = "Сумма вероятностей должна быть равна единице"
+            self.gr.Add(stattxt, pos=(5, 0), flag=wx.LEFT | wx.BOTTOM, border=5)
+            self.gr.Layout()
             return
+        for el in arr_p:
+            if el<=0:
+                stattxt.LabelText = "Одна из вероятностей отрицательная"
+                self.gr.Add(stattxt, pos=(5, 0), flag=wx.LEFT | wx.BOTTOM, border=5)
+                self.gr.Layout()
+                return
+            if el>=1:
+                stattxt.LabelText = "Одна из вероятностей больше единицы"
+                self.gr.Add(stattxt, pos=(5, 0), flag=wx.LEFT | wx.BOTTOM, border=5)
+                self.gr.Layout()
+                return
 
-        x, p = self.arr_x, arr_p
+
+        x, p = self.arr_x.copy(), arr_p.copy()
+
+        self.build_solve_DSV(p, x)
+
+    def build_solve_DSV(self, p, x):
+
         M_X = dsv.M_X(x, p)[1]
         D_X = dsv.D_X(x, p)[1]
         Std = dsv.S_X(x, p)[1]
-
         stattxt = wx.StaticText(self.panel)
         stattxt.LabelText = f"{M_X}-мат.ожидание\n{D_X}-дисперсия\n{Std}-стандартное отклонение"
-
         bmp = wx.Bitmap("why.jpg")
         bmp = self.scale_bitmap(bmp, 40, 40)
         stb = wx.Button(self.panel, size=(50, 50), name="button")
         stb.SetBitmap(bmp)
-
         arr_F = list()
         arr_F.append(0)
-        for el in range(len(arr_p)):
+        for el in range(len(p)):
             sum = 0
             if el == 0:
                 continue
             for i in range(el):
-                sum += arr_p[i]
+                sum += p[i]
             arr_F.append(sum)
         arr_F.append(1)
         x = self.arr_x.copy()
@@ -504,19 +567,16 @@ class MyFrame(wx.Frame):
         f_x = dsv.F_X(x, p)[0]
         # self._drawGraph(self.arr_x, arr_p)
         # self._drawGraph1(f_x, x)
-        self.build_canvas1(arr_p, x, y)
-        self.build_canvas2(arr_p, x, y)
-
+        self.build_canvas1(p, x, y)
+        self.build_canvas2(p, x, y)
         img = wx.Image("output1.png", type=wx.BITMAP_TYPE_ANY, index=-1)
         sb = wx.StaticBitmap(self.panel, -1, wx.Bitmap(img))
-
         self.gr.Add(stattxt, pos=(5, 0), flag=wx.LEFT | wx.BOTTOM, border=5)
         self.gr.Add(stb, pos=(5, 1), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
         self.gr.Add(sb, pos=(6, 0), flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
-
         self.gr.Layout()
         self.Bind(wx.EVT_BUTTON, self.onWhyButt, stb)
-        self.build_plot(arr_p, x, y)
+        self.build_plot(p, x, y)
 
     def __del__(self):
         pass
