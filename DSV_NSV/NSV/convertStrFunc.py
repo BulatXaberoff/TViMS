@@ -257,7 +257,7 @@ def generation_To_arr(F, V):
     return arr_x,arr_y
     # for i in range(len(F)):
 
-def build_plots(x1,y1,f_name1,x2,y2,f_name2):
+def build_plots(x1,y1,f_names1,f_name1,x2,y2,f_names2,f_name2):
     axes1 = np.linspace(-100, 100)
     axes2 = [0] * len(axes1)
     fig = plt.figure(figsize=(12, 6))
@@ -270,8 +270,9 @@ def build_plots(x1,y1,f_name1,x2,y2,f_name2):
     ax1=plt.subplot(1,2,1)
     plt.plot(axes1, axes2, color='k')
     plt.plot(axes2, axes1, color='k')
+    plt.title(label=f_name1)
     for i in range(len(x1)):
-        plt.plot(x1[i],y1[i],label=f_name1[i])
+        ax1.plot(x1[i],y1[i],linewidth = 2,label=f_names1[i])
     ax1.legend()
     ax1.grid()
     ax1.set_ylim(-20, 20)
@@ -280,9 +281,10 @@ def build_plots(x1,y1,f_name1,x2,y2,f_name2):
     ax2=plt.subplot(1,2,2)
     plt.plot(axes1, axes2, color='k')
     plt.plot(axes2, axes1, color='k')
+    plt.title(label=f_name2)
     for i in range(len(x2)):
-        plt.plot(x2[i], y2[i], label=f_name2[i])
-    ax1.legend()
+        ax2.plot(x2[i], y2[i],linewidth = 2, label=f_names2[i])
+    ax2.legend()
     ax2.grid()
     ax2.set_ylim(-20, 20)
     ax2.set_xlim(-20, 20)
