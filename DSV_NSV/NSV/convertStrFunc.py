@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 import sympy
 
 def around_num(num, num_after):
+    try:
+        int(num * num_after) / num_after
+    except Exception as e:
+        if str(e) == 'can\'t convert oo to int':
+            return -1.0000000001
     return int(num * num_after) / num_after
 
 def dropComm(formul):
